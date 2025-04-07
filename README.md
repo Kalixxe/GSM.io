@@ -1,6 +1,6 @@
 # GSM.io
 
-**GSM.io** es un sistema web desarrollado por [Kalixxe](https://github.com/Kalixxe) y [Sloane](https://github.com/tu_usuario) para la gestión inteligente de maquinaria, inventario e inspecciones técnicas en entornos industriales como fábricas o talleres. El objetivo es ofrecer una solución ligera, accesible y funcional para el seguimiento del estado de equipos, control de piezas y planificación de mantenimiento.
+**GSM.io** es un sistema web desarrollado por [Kalixxe](https://github.com/Kalixxe) y [Alex](https://github.com/alexanderariza) para la gestión inteligente de maquinaria, inventario e inspecciones técnicas en entornos industriales como fábricas o talleres. El objetivo es ofrecer una solución ligera, accesible y funcional para el seguimiento del estado de equipos, control de piezas y planificación de mantenimiento.
 
 ---
 
