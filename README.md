@@ -44,5 +44,8 @@ SIMio es una plataforma web diseñada para la gestión eficiente de activos, enf
 
 ---
 
-## 📁 Estructura del proyecto
+## 📁 Instructivo para cargar manuales en PDF
+
+📘 **Guía de edición:** Si necesitas agregar nuevas máquinas y vincular sus manuales PDF al visor interactivo, consulta el siguiente [tutorial paso a paso en PDF](./tutorial_edicion_maquinas_html_actualizado.pdf). Esta guía te ayudará a editar correctamente el archivo `maquinas.html`, subir manuales al repositorio y verificar que todo funcione.
+
 
