@@ -123,7 +123,7 @@
       }
     }
 
-    maquinas.forEach(async ({ nombre, coords, manual }) => {
+    maquinas.forEach(async ({ nombre, coords, manual, manual1, manual2 }) => {
       const { estado, fecha } = await obtenerEstado(nombre);
       const color = estadoColores[estado] || "gray";
       const marker = L.circleMarker(coords, {
@@ -138,6 +138,7 @@
           <p class="font-bold">🔧 ${nombre}</p>
           <p class="text-xs">📅 Último mantenimiento: ${fecha}</p>
           <a href="${manual}" target="_blank" class="text-blue-600 underline block mt-1">📥 Descargar manual</a>
+          ${manual2 ? `<a href="${manual2}" target="_blank" class="text-blue-600 underline block">📥 Descargar manual 2</a>` : ""}
           <a href="mantenimiento.html?maquina=${encodeURIComponent(nombre)}" class="text-blue-600 underline block">🔧 Ver mantenimientos</a>
         </div>
       `);
