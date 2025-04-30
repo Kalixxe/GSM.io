@@ -1,7 +1,7 @@
 # SIMio – Sistema de Gestión de Máquinas e Inventario
 
 **Versión:** 1.1  
-**Desarrollado por:** [GeoWay](https://geo-way.github.io)  
+
 **Ubicación:** Berlín, Alemania
 
 SIMio es una plataforma web diseñada para la gestión eficiente de activos, enfocándose en el seguimiento y control de máquinas e inventario. Su objetivo es optimizar la administración de recursos en entornos industriales y logísticos.
