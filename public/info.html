@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentación del Sistema SIMio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    h1, h2, h3 { scroll-margin-top: 100px; }
+    code { background-color: #f3f4f6; padding: 0.2em 0.4em; border-radius: 4px; }
+  </style>
+</head>
+    <!-- HEADER -->
+<body class="bg-gray-50 text-gray-800">
+    <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-red-600">📚 Documentación SIMio</h1>
+
+ 
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="index.html" class="flex items-center space-x-2">
+        <img src="https://images.squarespace-cdn.com/content/v1/58a36221d482e9bca4af6eac/34694fc3-6f92-4054-8a58-3776436c00dc/IMG_9869+2.PNG?format=2500w" alt="Logo" class="h-10 w-auto" />
+        <span class="text-xl font-bold text-red-600">SIMio</span>
+        <span id="rolVisual" class="text-sm text-gray-500 italic ml-4">(Rol: <span id="nombreRol">...</span>)</span>
+      </a>
+      <nav class="hidden md:flex space-x-6 text-sm font-medium">
+        <a href="index.html" class="text-gray-700 hover:text-red-600">Home</a>
+        <a href="inventario.html" class="text-gray-700 hover:text-red-600">Inventario</a>
+        <a href="mantenimiento.html" class="text-red-600 hover:text-red-600 font-bold">Mantenimiento</a>
+        <a href="maquinas.html" class="text-gray-700 hover:text-red-600">Diagrama de Máquinas</a>
+         
+      </nav>
+      <button id="menuToggle" class="md:hidden text-gray-700 focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+    <!-- Menú para móviles -->
+    <div id="mobileMenu" class="md:hidden hidden px-4 pb-4">
+      <a href="index.html" class="block py-2 text-gray-700 hover:text-red-600">Home</a>
+      <a href="inventario.html" class="block py-2 text-gray-700 hover:text-red-600">Inventario</a>
+      <a href="mantenimiento.html" class="block py-2 text-gray-700 hover:text-red-600">Mantenimiento</a>
+      <a href="maquinas.html" class="block py-2 text-gray-700 hover:text-red-600">Diagrama de Máquinas</a>
+       
+    </div>
+ 
+ 
+
+      
+ 
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto p-6">
+    <section>
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">1. Introducción</h2>
+      <p class="mb-4">Esta documentación describe el funcionamiento del sistema <strong>SIMio</strong>, incluyendo:</p>
+      <ul class="list-disc list-inside space-y-1">
+        <li>Gestión de inventario de piezas y componentes</li>
+        <li>Registro y seguimiento de mantenimientos</li>
+        <li>Uso del diagrama interactivo de máquinas</li>
+        <li>Acceso a manuales por máquina</li>
+      </ul>
+    </section>
+
+    <section class="mt-8">
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">2. Inventario</h2>
+      <p class="mb-2">En la sección de <strong>Inventario</strong> puedes:</p>
+      <ul class="list-disc list-inside mb-4">
+        <li>Registrar nuevos artículos</li>
+        <li>Filtrar por nombre, proveedor, ubicación, fecha y estado</li>
+        <li>Editar o eliminar piezas existentes</li>
+      </ul>
+      <p>Todos los datos son almacenados en una base de datos PostgreSQL y se acceden mediante un backend Node.js.</p>
+      <img src="img/doc_inventario.png" alt="Vista del módulo de inventario" class="rounded border my-4 shadow"/>
+    </section>
+
+    <section class="mt-8">
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">3. Mantenimiento</h2>
+      <p class="mb-4">Desde la sección de <strong>Mantenimiento</strong> puedes:</p>
+      <ul class="list-disc list-inside mb-4">
+        <li>Registrar nuevas inspecciones y mantenimientos</li>
+        <li>Filtrar por técnico, máquina, fecha o estado</li>
+        <li>Ver historial detallado por máquina</li>
+      </ul>
+      <p>Los mantenimientos incluyen síntomas seleccionables, evaluación por componente, estado final, imagen opcional y un link al registro.</p>
+      <img src="img/doc_mantenimiento.png" alt="Formulario de mantenimiento" class="rounded border my-4 shadow"/>
+    </section>
+
+    <section class="mt-8">
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">4. Diagrama Interactivo de Máquinas</h2>
+      <p class="mb-4">Visualiza en un mapa las máquinas con:</p>
+      <ul class="list-disc list-inside mb-4">
+        <li>Coordenadas exactas sobre <code>layout_horizontal.png</code></li>
+        <li>Colores por estado: verde, amarillo, naranja y rojo</li>
+        <li>Popup con nombre, último estado, fecha, manual y enlace a mantenimientos</li>
+      </ul>
+      <img src="img/doc_diagrama.png" alt="Mapa de máquinas" class="rounded border my-4 shadow"/>
+    </section>
+
+    <section class="mt-8">
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">5. Manuales</h2>
+      <p class="mb-4">Cada máquina tiene vinculado su <strong>manual en PDF</strong> alojado en GitHub. Este enlace se puede editar en el archivo <code>maquinas.html</code> dentro del array <code>maquinas</code>.</p>
+      <pre class="bg-gray-100 p-4 rounded text-sm overflow-x-auto">
+{
+  nombre: "CERRADORA 2",
+  coords: [370, 548],
+  manual: "https://kalixxe.github.io/Manuales/RIGHT_HAND_OVERLOCK_HEAD.pdf"
+}
+      </pre>
+    </section>
+
+    <section class="mt-8">
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">6. Recomendaciones</h2>
+      <ul class="list-disc list-inside space-y-2">
+        <li>Mantén actualizados los estados de las máquinas</li>
+        <li>Verifica que las imágenes de mantenimiento no superen 500 KB</li>
+        <li>Haz copias de respaldo periódicas de la base de datos</li>
+      </ul>
+    </section>
+
+    <section class="mt-10">
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">7. Preguntas Frecuentes (FAQ)</h2>
+      <ul class="list-disc list-inside space-y-2">
+        <li><strong>¿Dónde se guardan los datos?</strong> En una base de datos PostgreSQL alojada en Render.</li>
+        <li><strong>¿Cómo filtro los mantenimientos por máquina?</strong> Desde el diagrama de máquinas haz clic en "Ver mantenimientos" y el nombre se filtra automáticamente.</li>
+        <li><strong>¿Puedo usar otro visor en lugar del layout horizontal?</strong> Sí, puedes cambiar la imagen y ajustar las coordenadas de cada máquina.</li>
+        <li><strong>¿Cómo subo un nuevo manual?</strong> Sube el PDF a GitHub y edita su URL en el archivo <code>maquinas.html</code>.</li>
+      </ul>
+    </section>
+  </main>
+  <!-- Footer final -->
+  <footer class="bg-gray-600 text-gray-200 text-center py-6 mt-10 text-sm">
+    <div class="max-w-4xl mx-auto px-4 flex flex-col items-center space-y-2">
+      <p>© 2025 <strong><a href="https://geo-way.github.io/GeoWay.io/index.html" class="hover:underline">GEOWAY</a></strong>, Technology-Based Initiative – IBT. All rights reserved.</p>
+      <img src="https://geo-way.github.io/GeoWay.io/images/Logo5.png" alt="GEOWAY Logo" class="h-8 md:h-6 w-auto">
+    </div>
+  </footer>
+</body>
+</html>
