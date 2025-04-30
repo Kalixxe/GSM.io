@@ -7,6 +7,68 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.3; }
+      100% { opacity: 1; }
+    }
+    .pulse-animation {
+      animation: pulse 1.5s infinite;
+    }
+    
+    .mini-map {
+      border: 2px solid rgba(0,0,0,0.2);
+      background: white;
+      border-radius: 4px;
+    }
+    
+    .custom-tooltip {
+      background-color: white;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      padding: 10px;
+      max-width: 300px;
+      transition: all 0.3s ease;
+    }
+    
+    .machine-status {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    
+    .search-box {
+      position: absolute;
+      top: 80px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+      width: 250px;
+    }
+    
+    .search-results {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+    
+    .result-item {
+      padding: 5px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .result-item:hover {
+      background-color: #f0f0f0;
+    }
+  </style>
 </head>
 <body class="bg-gray-100">
   
@@ -50,7 +112,68 @@
 
   <main class="max-w-7xl mx-auto mt-10 px-4">
     <h1 class="text-xl font-bold mb-4">📍 Diagrama de Máquinas</h1>
-    <div id="map" class="w-full h-[80vh] rounded shadow"></div>
+    
+    <!-- Botones para filtros y alertas -->
+    <div class="flex flex-wrap items-center gap-2 mb-4">
+      <div class="flex items-center">
+        <span class="mr-2 text-sm font-medium">Filtrar por estado:</span>
+        <select id="statusFilter" class="text-sm bg-white border border-gray-300 rounded px-3 py-1">
+          <option value="todos">Todos</option>
+          <option value="Reparado">En funcionamiento</option>
+          <option value="Pendiente">Programado</option>
+          <option value="En seguimiento">En seguimiento</option>
+          <option value="Fuera de servicio">Fuera de servicio</option>
+        </select>
+      </div>
+      
+      <button id="showAllMachines" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1 rounded">
+        Mostrar todas las máquinas
+      </button>
+      
+      <button id="toggleMinimapBtn" class="bg-gray-500 hover:bg-gray-600 text-white text-sm px-3 py-1 rounded">
+        Mostrar minimapa
+      </button>
+      
+      <button id="toggleAlertsBtn" class="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-1 rounded">
+        <span id="alertCount" class="bg-white text-red-500 px-1 rounded-full text-xs mr-1">0</span>
+        Ver alertas
+      </button>
+    </div>
+    
+    <div class="relative">
+      <div id="map" class="w-full h-[70vh] rounded-lg shadow-md"></div>
+      
+      <!-- Buscador de máquinas -->
+      <div class="search-box">
+        <div class="relative">
+          <input type="text" id="searchInput" placeholder="Buscar máquina..." class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
+          <button id="clearSearchBtn" class="absolute right-2 top-2 text-gray-400 hover:text-gray-600">
+            ✕
+          </button>
+        </div>
+        <div id="searchResults" class="search-results hidden"></div>
+      </div>
+    </div>
+    
+    <!-- Tabla de alertas -->
+    <div id="alertsPanel" class="mt-6 bg-white p-4 rounded-lg shadow-md hidden">
+      <h2 class="text-lg font-bold mb-3">⚠️ Alertas de mantenimiento</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="py-2 px-3 text-left">Máquina</th>
+              <th class="py-2 px-3 text-left">Estado</th>
+              <th class="py-2 px-3 text-left">Último mantenimiento</th>
+              <th class="py-2 px-3 text-left">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="alertsTableBody">
+            <!-- Se llenará dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+    </div>
   </main>
 
   <footer class="bg-gray-600 text-gray-200 text-center py-6 mt-10 text-sm">
@@ -61,6 +184,7 @@
   </footer>
 
   <script>
+    // Configuración inicial del mapa
     const map = L.map('map', {
       crs: L.CRS.Simple,
       minZoom: -1,
@@ -71,7 +195,76 @@
     const bounds = [[0, 0], [1000, 1500]];
     const image = L.imageOverlay('img/layout_horizontal.png', bounds).addTo(map);
     map.setView([600, 750], 0);
-
+    
+    // Crear el minimapa
+    let minimap = null;
+    let isMinimapVisible = false;
+    
+    function createMinimap() {
+      if (minimap) {
+        return;
+      }
+      
+      minimap = L.control.minimap = L.map('minimap', {
+        crs: L.CRS.Simple,
+        zoomControl: false,
+        dragging: false,
+        scrollWheelZoom: false,
+        attributionControl: false
+      });
+      
+      // Agregar la imagen al minimapa
+      L.imageOverlay('img/layout_horizontal.png', bounds).addTo(minimap);
+      
+      // Crear un rectángulo que represente la vista actual
+      const viewRect = L.rectangle([[0, 0], [0, 0]], {
+        color: 'red',
+        weight: 2,
+        fillOpacity: 0.1
+      }).addTo(minimap);
+      
+      // Actualizar el rectángulo cuando cambie la vista del mapa principal
+      map.on('move', updateViewRect);
+      
+      function updateViewRect() {
+        const bounds = map.getBounds();
+        viewRect.setBounds(bounds);
+      }
+      
+      // Configuración inicial
+      minimap.fitBounds(bounds);
+      updateViewRect();
+    }
+    
+    function toggleMinimap() {
+      isMinimapVisible = !isMinimapVisible;
+      
+      if (isMinimapVisible) {
+        if (!document.getElementById('minimap')) {
+          const minimapContainer = document.createElement('div');
+          minimapContainer.id = 'minimap';
+          minimapContainer.className = 'mini-map';
+          minimapContainer.style.width = '200px';
+          minimapContainer.style.height = '150px';
+          minimapContainer.style.position = 'absolute';
+          minimapContainer.style.bottom = '20px';
+          minimapContainer.style.left = '20px';
+          minimapContainer.style.zIndex = '1000';
+          document.getElementById('map').appendChild(minimapContainer);
+          
+          createMinimap();
+        } else {
+          document.getElementById('minimap').style.display = 'block';
+        }
+        
+        document.getElementById('toggleMinimapBtn').textContent = 'Ocultar minimapa';
+      } else {
+        document.getElementById('minimap').style.display = 'none';
+        document.getElementById('toggleMinimapBtn').textContent = 'Mostrar minimapa';
+      }
+    }
+    
+    // Colores para estados de mantenimiento
     const estadoColores = {
       "Reparado": "green",
       "Pendiente": "yellow",
@@ -79,6 +272,7 @@
       "Fuera de servicio": "red"
     };
 
+    // Datos de máquinas
     const maquinas = [
       { nombre: "PISTOLA CUADROS", coords: [892, 206], manual: "https://kalixxe.github.io/Manuales/PISTOLA_CUADROS.pdf" },
       { nombre: "PISTOLA SEMIFLEX", coords: [822, 206], manual: "https://kalixxe.github.io/Manuales/PISTOLA_SEMIFLEX.pdf" },
@@ -111,6 +305,12 @@
       { nombre: "BANDAS 2", coords: [690, 390], manual1: "https://github.com/Kalixxe/Manuales/blob/main/LEFT%20HAND%20OVERLOCK%20HEAD.pdf", manual2: "https://github.com/Kalixxe/Manuales/blob/main/LEFT%20HAND%20OVERLOCK%20HEAD.pdf"}
     ];
 
+    // Objetos para almacenar marcadores y datos
+    const markers = {};
+    const machineData = {};
+    let alertCount = 0;
+
+    // Función para obtener el estado de una máquina
     async function obtenerEstado(maquina) {
       try {
         const res = await fetch("https://sim-io.onrender.com/api/mantenimiento");
@@ -122,28 +322,258 @@
       }
     }
 
-    maquinas.forEach(async ({ nombre, coords, manual, manual1, manual2 }) => {
-      const { estado, fecha } = await obtenerEstado(nombre);
-      const color = estadoColores[estado] || "gray";
-      const marker = L.circleMarker(coords, {
-        radius: 8,
-        color,
-        fillColor: color,
-        fillOpacity: 1
-      }).addTo(map);
+    // Función para crear los marcadores en el mapa
+    async function createMarkers() {
+      for (const maquina of maquinas) {
+        const { nombre, coords, manual, manual1, manual2 } = maquina;
+        const { estado, fecha } = await obtenerEstado(nombre);
+        
+        // Almacenar datos de la máquina
+        machineData[nombre] = { estado, fecha, coords };
+        
+        // Incrementar contador de alertas si es necesario
+        if (estado === "Fuera de servicio" || estado === "En seguimiento") {
+          alertCount++;
+        }
+        
+        // Crear marcador
+        const color = estadoColores[estado] || "gray";
+        const marker = L.circleMarker(coords, {
+          radius: 8,
+          color,
+          fillColor: color,
+          fillOpacity: 1
+        }).addTo(map);
+        
+        // Aplicar animación de pulso si la máquina está fuera de servicio
+        if (estado === "Fuera de servicio") {
+          marker._path.classList.add("pulse-animation");
+        }
+        
+        // Popup con información detallada
+        marker.bindPopup(`
+          <div class="custom-tooltip">
+            <p class="font-bold text-base">🔧 ${nombre}</p>
+            <p>
+              <span class="machine-status" style="background-color: ${color}"></span>
+              <span class="font-medium">${estado}</span>
+            </p>
+            <p class="text-xs mb-2">📅 Último mantenimiento: ${fecha}</p>
+            ${manual ? `<a href="${manual}" target="_blank" class="text-blue-600 hover:underline block mt-1">📥 Descargar manual </a>` : ""}
+            ${manual1 ? `<a href="${manual1}" target="_blank" class="text-blue-600 hover:underline block mt-1">📥 Descargar manual 1</a>` : ""}
+            ${manual2 ? `<a href="${manual2}" target="_blank" class="text-blue-600 hover:underline block">📥 Descargar manual 2</a>` : ""}
+            <div class="mt-2 pt-2 border-t border-gray-200">
+              <a href="mantenimiento.html?maquina=${encodeURIComponent(nombre)}" class="bg-blue-500 hover:bg-blue-600 text-white text-xs py-1 px-2 rounded inline-block">🔧 Ver mantenimientos</a>
+            </div>
+          </div>
+        `, {
+          className: 'custom-popup',
+          maxWidth: 300
+        });
+        
+        // Tooltip con nombre de la máquina
+        marker.bindTooltip(nombre, {
+          permanent: false,
+          direction: 'top',
+          className: 'bg-white px-2 py-1 rounded shadow-md text-xs'
+        });
+        
+        // Almacenar referencia al marcador
+        markers[nombre] = marker;
+      }
+      
+      // Actualizar contador de alertas en el botón
+      document.getElementById('alertCount').textContent = alertCount;
+      
+      // Llenar tabla de alertas
+      updateAlertsTable();
+    }
 
-      marker.bindPopup(`
-        <div class="text-sm">
-          <p class="font-bold">🔧 ${nombre}</p>
-          <p class="text-xs">📅 Último mantenimiento: ${fecha}</p>
-          ${manual ? `<a href="${manual}" target="_blank" class="text-blue-600 underline block mt-1">📥 Descargar manual </a>` : ""}
-          ${manual1 ? `<a href="${manual1}" target="_blank" class="text-blue-600 underline block mt-1">📥 Descargar manual 1</a>` : ""}
-          ${manual2 ? `<a href="${manual2}" target="_blank" class="text-blue-600 underline block">📥 Descargar manual 2</a>` : ""}
-          <a href="mantenimiento.html?maquina=${encodeURIComponent(nombre)}" class="text-blue-600 underline block">🔧 Ver mantenimientos</a>
-        </div>
-      `);
+    // Función para actualizar tabla de alertas
+    function updateAlertsTable() {
+      const tableBody = document.getElementById('alertsTableBody');
+      tableBody.innerHTML = '';
+      
+      let alertItems = [];
+      
+      // Recopilar máquinas con alertas
+      for (const [nombre, data] of Object.entries(machineData)) {
+        if (data.estado === "Fuera de servicio" || data.estado === "En seguimiento") {
+          alertItems.push({ nombre, ...data });
+        }
+      }
+      
+      // Ordenar por prioridad (fuera de servicio primero)
+      alertItems.sort((a, b) => {
+        if (a.estado === "Fuera de servicio" && b.estado !== "Fuera de servicio") return -1;
+        if (a.estado !== "Fuera de servicio" && b.estado === "Fuera de servicio") return 1;
+        return a.nombre.localeCompare(b.nombre);
+      });
+      
+      // Crear filas de la tabla
+      alertItems.forEach(item => {
+        const color = estadoColores[item.estado];
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-gray-50';
+        
+        row.innerHTML = `
+          <td class="py-2 px-3 border-b border-gray-200">${item.nombre}</td>
+          <td class="py-2 px-3 border-b border-gray-200">
+            <span class="machine-status" style="background-color: ${color}"></span>
+            ${item.estado}
+          </td>
+          <td class="py-2 px-3 border-b border-gray-200">${item.fecha}</td>
+          <td class="py-2 px-3 border-b border-gray-200">
+            <button class="bg-blue-500 hover:bg-blue-600 text-white text-xs py-1 px-2 rounded mr-1 locate-machine" data-machine="${item.nombre}">
+              Localizar
+            </button>
+            <a href="mantenimiento.html?maquina=${encodeURIComponent(item.nombre)}" class="bg-gray-500 hover:bg-gray-600 text-white text-xs py-1 px-2 rounded inline-block">
+              Detalles
+            </a>
+          </td>
+        `;
+        
+        tableBody.appendChild(row);
+      });
+      
+      // Agregar event listeners a los botones de localizar
+      document.querySelectorAll('.locate-machine').forEach(button => {
+        button.addEventListener('click', () => {
+          const machineName = button.getAttribute('data-machine');
+          locateMachine(machineName);
+        });
+      });
+    }
+
+    // Función para localizar una máquina en el mapa
+    function locateMachine(machineName) {
+      const marker = markers[machineName];
+      if (marker) {
+        map.setView(marker.getLatLng(), 1);
+        marker.openPopup();
+        
+        // Destacar la máquina temporalmente
+        const originalStyle = {
+          radius: marker.options.radius,
+          color: marker.options.color,
+          fillColor: marker.options.fillColor,
+          fillOpacity: marker.options.fillOpacity
+        };
+        
+        // Hacer el marcador más grande
+        marker.setStyle({
+          radius: 15,
+          weight: 3
+        });
+        
+        // Volver al estilo original después de 3 segundos
+        setTimeout(() => {
+          marker.setStyle(originalStyle);
+        }, 3000);
+      }
+    }
+
+    // Función para filtrar máquinas por estado
+    function filterMachinesByStatus(status) {
+      for (const [nombre, marker] of Object.entries(markers)) {
+        const machineStatus = machineData[nombre].estado;
+        
+        if (status === 'todos' || machineStatus === status) {
+          marker.addTo(map);
+        } else {
+          map.removeLayer(marker);
+        }
+      }
+    }
+
+    // Buscador de máquinas
+    function setupSearch() {
+      const searchInput = document.getElementById('searchInput');
+      const searchResults = document.getElementById('searchResults');
+      const clearSearchBtn = document.getElementById('clearSearchBtn');
+      
+      // Función para mostrar resultados
+      function showResults(query) {
+        searchResults.innerHTML = '';
+        searchResults.classList.remove('hidden');
+        
+        if (!query) {
+          searchResults.classList.add('hidden');
+          return;
+        }
+        
+        const results = maquinas.filter(machine => 
+          machine.nombre.toLowerCase().includes(query.toLowerCase())
+        );
+        
+        if (results.length === 0) {
+          searchResults.innerHTML = '<div class="p-2 text-gray-500">No se encontraron resultados</div>';
+          return;
+        }
+        
+        results.forEach(machine => {
+          const estado = machineData[machine.nombre]?.estado || 'Sin datos';
+          const color = estadoColores[estado] || 'gray';
+          
+          const item = document.createElement('div');
+          item.className = 'result-item';
+          item.innerHTML = `
+            <span class="machine-status" style="background-color: ${color}"></span>
+            ${machine.nombre}
+          `;
+          
+          item.addEventListener('click', () => {
+            locateMachine(machine.nombre);
+            searchResults.classList.add('hidden');
+            searchInput.value = machine.nombre;
+          });
+          
+          searchResults.appendChild(item);
+        });
+      }
+      
+      // Event listeners
+      searchInput.addEventListener('input', () => {
+        showResults(searchInput.value);
+      });
+      
+      clearSearchBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        searchResults.classList.add('hidden');
+      });
+      
+      // Cerrar resultados al hacer clic fuera
+      document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+          searchResults.classList.add('hidden');
+        }
+      });
+    }
+
+    // Inicializar
+    createMarkers().then(() => {
+      // Configurar eventos tras cargar los datos
+      document.getElementById('statusFilter').addEventListener('change', (e) => {
+        filterMachinesByStatus(e.target.value);
+      });
+      
+      document.getElementById('showAllMachines').addEventListener('click', () => {
+        document.getElementById('statusFilter').value = 'todos';
+        filterMachinesByStatus('todos');
+      });
+      
+      document.getElementById('toggleMinimapBtn').addEventListener('click', toggleMinimap);
+      
+      document.getElementById('toggleAlertsBtn').addEventListener('click', () => {
+        const alertsPanel = document.getElementById('alertsPanel');
+        alertsPanel.classList.toggle('hidden');
+      });
+      
+      // Configurar buscador
+      setupSearch();
     });
 
+    // Configurar leyenda
     const legend = L.control({ position: 'topright' });
     legend.onAdd = function () {
       const div = L.DomUtil.create('div', 'bg-white p-2 text-xs rounded shadow');
@@ -152,44 +582,45 @@
         <span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-1"></span>En funcionamiento<br>
         <span class="inline-block w-3 h-3 rounded-full bg-yellow-500 mr-1"></span>Programado<br>
         <span class="inline-block w-3 h-3 rounded-full bg-orange-500 mr-1"></span>En seguimiento<br>
-        <span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span>Fuera de servicio
+        <span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span>Fuera de servicio<br>
+        <span class="inline-block w-3 h-3 rounded-full pulse-animation bg-red-500 mr-1"></span>Alerta crítica
       `;
       return div;
     };
     legend.addTo(map);
 
-L.control.attribution({
-  position: 'bottomleft',
-  prefix: `
-    <span style="display: inline-flex; align-items: center; gap: 6px; font: 11px/1.5 'Helvetica Neue', Arial, Helvetica, sans-serif; color: #333;">
-      <a href="https://geo-way.github.io/GeoWay.io/index.html" target="_blank" style="color: inherit; text-decoration: none;">
-        Powered by 
-      </a>
-      <img src="https://geo-way.github.io/GeoWay.io/images/Logo5.png" alt="GEOWAY" style="height: 14px; vertical-align: middle; filter: brightness(0);">
-    </span>
-  `
-}).addTo(map);
-
+    // Agregar información de atribución
+    L.control.attribution({
+      position: 'bottomleft',
+      prefix: `
+        <span style="display: inline-flex; align-items: center; gap: 6px; font: 11px/1.5 'Helvetica Neue', Arial, Helvetica, sans-serif; color: #333;">
+          <a href="https://geo-way.github.io/GeoWay.io/index.html" target="_blank" style="color: inherit; text-decoration: none;">
+            Powered by 
+          </a>
+          <img src="https://geo-way.github.io/GeoWay.io/images/Logo5.png" alt="GEOWAY" style="height: 14px; vertical-align: middle; filter: brightness(0);">
+        </span>
+      `
+    }).addTo(map);
   </script>
-<script>
-  window.addEventListener("DOMContentLoaded", () => {
-    const spanRol = document.getElementById("nombreRol");
-    if (spanRol) {
-      const role = localStorage.getItem("role") || "viewer";
-      spanRol.textContent = role;
-    }
-  });
-</script>
-<!-- funcion para la hamburgesa de Menú para móviles -->
-<script>
-  const menuToggle = document.getElementById("menuToggle");
-  const mobileMenu = document.getElementById("mobileMenu");
+  
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const spanRol = document.getElementById("nombreRol");
+      if (spanRol) {
+        const role = localStorage.getItem("role") || "viewer";
+        spanRol.textContent = role;
+      }
+    });
+  </script>
+  
+  <!-- Función para el menú hamburguesa en móviles -->
+  <script>
+    const menuToggle = document.getElementById("menuToggle");
+    const mobileMenu = document.getElementById("mobileMenu");
 
-  menuToggle.addEventListener("click", () => {
-    mobileMenu.classList.toggle("hidden");
-  });
-  
-</script>
-  
+    menuToggle.addEventListener("click", () => {
+      mobileMenu.classList.toggle("hidden");
+    });
+  </script>
 </body>
 </html>
