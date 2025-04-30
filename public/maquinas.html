@@ -21,6 +21,36 @@
       border: 2px solid rgba(0,0,0,0.2);
       background: white;
       border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    /* Estilos para el minimapa */
+    .minimap-container {
+      width: 250px;
+      height: 180px;
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      z-index: 1000;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    
+    .minimap-header {
+      background-color: rgba(255,255,255,0.9);
+      padding: 3px 8px;
+      font-size: 10px;
+      font-weight: bold;
+      border-bottom: 1px solid #ccc;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .minimap-close {
+      cursor: pointer;
+      font-weight: bold;
     }
     
     .custom-tooltip {
@@ -192,9 +222,17 @@
       zoomControl: true
     });
 
+    // Definir los límites del mapa
     const bounds = [[0, 0], [1000, 1500]];
+    
+    // Cargar la imagen de fondo
     const image = L.imageOverlay('img/layout_horizontal.png', bounds).addTo(map);
-    map.setView([600, 750], 0);
+    
+    // Asegurar que la vista inicial muestre todo el plano
+    map.fitBounds(bounds);
+    
+    // Ajustar la vista central
+    map.setView([500, 750], 0);
     
     // Crear el minimapa
     let minimap = null;
@@ -210,11 +248,13 @@
         zoomControl: false,
         dragging: false,
         scrollWheelZoom: false,
-        attributionControl: false
+        attributionControl: false,
+        minZoom: -2,
+        maxZoom: 0
       });
       
       // Agregar la imagen al minimapa
-      L.imageOverlay('img/layout_horizontal.png', bounds).addTo(minimap);
+      const minimapImage = L.imageOverlay('img/layout_horizontal.png', bounds).addTo(minimap);
       
       // Crear un rectángulo que represente la vista actual
       const viewRect = L.rectangle([[0, 0], [0, 0]], {
@@ -231,8 +271,12 @@
         viewRect.setBounds(bounds);
       }
       
-      // Configuración inicial
+      // Configuración inicial - asegurar que se vea todo el plano
       minimap.fitBounds(bounds);
+      
+      // Ajustar el zoom para garantizar que todo el plano sea visible
+      minimap.setZoom(-1);
+      
       updateViewRect();
     }
     
@@ -240,26 +284,51 @@
       isMinimapVisible = !isMinimapVisible;
       
       if (isMinimapVisible) {
-        if (!document.getElementById('minimap')) {
+        if (!document.getElementById('minimap-container')) {
+          // Crear un contenedor principal con título
+          const container = document.createElement('div');
+          container.id = 'minimap-container';
+          container.className = 'minimap-container';
+          
+          // Agregar el encabezado
+          const header = document.createElement('div');
+          header.className = 'minimap-header';
+          header.innerHTML = '<span>Vista general del plano</span><span class="minimap-close" title="Cerrar">✕</span>';
+          container.appendChild(header);
+          
+          // Agregar el div para el mapa
           const minimapContainer = document.createElement('div');
           minimapContainer.id = 'minimap';
           minimapContainer.className = 'mini-map';
-          minimapContainer.style.width = '200px';
+          minimapContainer.style.width = '250px';
           minimapContainer.style.height = '150px';
-          minimapContainer.style.position = 'absolute';
-          minimapContainer.style.bottom = '20px';
-          minimapContainer.style.left = '20px';
-          minimapContainer.style.zIndex = '1000';
-          document.getElementById('map').appendChild(minimapContainer);
+          container.appendChild(minimapContainer);
+          
+          document.getElementById('map').appendChild(container);
+          
+          // Evento para cerrar el minimapa
+          document.querySelector('.minimap-close').addEventListener('click', () => {
+            toggleMinimap();
+          });
           
           createMinimap();
         } else {
-          document.getElementById('minimap').style.display = 'block';
+          document.getElementById('minimap-container').style.display = 'block';
+          
+          // Refrescar el minimapa
+          if (minimap) {
+            minimap.invalidateSize();
+            setTimeout(() => {
+              minimap.setView([500, 750], -1);
+            }, 100);
+          }
         }
         
         document.getElementById('toggleMinimapBtn').textContent = 'Ocultar minimapa';
       } else {
-        document.getElementById('minimap').style.display = 'none';
+        if (document.getElementById('minimap-container')) {
+          document.getElementById('minimap-container').style.display = 'none';
+        }
         document.getElementById('toggleMinimapBtn').textContent = 'Mostrar minimapa';
       }
     }
