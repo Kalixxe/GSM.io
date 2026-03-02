@@ -216,7 +216,7 @@
 
     async function cargarInventario() {
       try {
-        const res = await fetch("https://gsm-io.onrender.com/api/inventario");
+        const res = await fetch("https://gsmio-production.up.railway.app/api/inventario");
         const data = await res.json();
         const cuerpo = document.getElementById("cuerpoTabla");
         cuerpo.innerHTML = "";
@@ -254,7 +254,7 @@
         return;
       }
       try {
-        const res = await fetch("https://gsm-io.onrender.com/api/inventario", {
+        const res = await fetch("https://gsmio-production.up.railway.app/api/inventario", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(datos)
@@ -271,7 +271,7 @@
     async function eliminarArticulo(id) {
       if (!confirm("¿Eliminar este artículo?")) return;
       try {
-        const res = await fetch("https://gsm-io.onrender.com/api/inventario/" + id, {
+        const res = await fetch("https://gsmio-production.up.railway.app/api/inventario/" + id, {
           method: "DELETE"
         });
         if (!res.ok) throw new Error(await res.text());
@@ -315,7 +315,7 @@
       const id = datos.id;
       delete datos.id;
       try {
-        const res = await fetch("https://gsm-io.onrender.com/api/inventario/" + document.getElementById("idArticulo").value, {
+        const res = await fetch("https://gsmio-production.up.railway.app/api/inventario/" + document.getElementById("idArticulo").value, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(datos)
