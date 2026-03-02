@@ -35,7 +35,6 @@ app.post('/api/inventario', async (req, res) => {
 
   console.log('POST /api/inventario - Datos recibidos:', req.body);
 
-  // Validación básica
   if (!nombre || !proveedor || !cantidad || !precio || !fecha || !vidautil || !ubicacion || !estado) {
     console.error('Error: Faltan campos obligatorios');
     return res.status(400).json({ error: 'Faltan campos obligatorios' });
@@ -58,9 +57,7 @@ app.post('/api/inventario', async (req, res) => {
     ];
 
     const result = await pool.query(query, values);
-
     console.log('Artículo guardado:', result.rows[0]);
-
     res.status(201).json({ message: 'Artículo guardado correctamente', item: result.rows[0] });
   } catch (error) {
     console.error('Error al guardar artículo:', error);
@@ -78,13 +75,13 @@ app.get('/api/inventario', async (req, res) => {
     }
     res.json(result.rows);
   } catch (error) {
-  console.error("ERROR REAL BD:");
-  console.error(error);
-  res.status(500).json({
-    error: error.message,
-    detail: error.detail
-  });
-}
+    console.error("ERROR REAL BD:", error);
+    res.status(500).json({
+      error: error.message,
+      detail: error.detail
+    });
+  }
+});
 
 // PUT - Editar artículo
 app.put('/api/inventario/:id', async (req, res) => {
@@ -114,7 +111,6 @@ app.put('/api/inventario/:id', async (req, res) => {
 
     const result = await pool.query(query, values);
     console.log('Artículo actualizado:', result.rows[0]);
-
     res.json({ message: "Artículo actualizado correctamente", item: result.rows[0] });
   } catch (error) {
     console.error('Error al actualizar artículo:', error);
@@ -161,7 +157,6 @@ app.post('/api/mantenimiento', upload.single('fotoman'), async (req, res) => {
 
     const fotoman = req.file ? `/uploads/${req.file.filename}` : null;
 
-    // Transformar síntomas en array de PostgreSQL
     if (Array.isArray(sintomas) && sintomas.length > 0) {
       sintomas = `{${sintomas.map(s => `"${s}"`).join(',')}}`;
     } else {
