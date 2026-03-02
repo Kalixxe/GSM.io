@@ -26,11 +26,7 @@ const pool = new Pool({
 
 // POST - Registrar artículo
 app.post('/api/inventario', async (req, res) => {
-  const {
-    nombre, proveedor, cantidad, precio, fecha,
-    vidautil, ubicacion, estado, familia,
-    codigobarras
-  } = req.body;
+  const { nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia, codigobarras } = req.body;
 
   if (!nombre || !proveedor || !cantidad || !precio || !fecha || !vidautil || !ubicacion || !estado) {
     return res.status(400).json({ error: 'Faltan campos obligatorios' });
@@ -44,12 +40,7 @@ app.post('/api/inventario', async (req, res) => {
       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
       RETURNING *;
     `;
-    const values = [
-      nombre, proveedor, cantidad, precio, fecha,
-      vidautil, ubicacion, estado, familia || null,
-      codigobarras || null
-    ];
-
+    const values = [nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia || null, codigobarras || null];
     const result = await pool.query(query, values);
     res.status(201).json({ message: 'Artículo guardado correctamente', item: result.rows[0] });
   } catch (error) {
@@ -62,21 +53,17 @@ app.post('/api/inventario', async (req, res) => {
 app.get('/api/inventario', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM inventario ORDER BY fecha DESC');
-    res.json(result.rows);
+    res.json(Array.isArray(result.rows) ? result.rows : []);
   } catch (error) {
     console.error('Error al obtener artículos:', error);
-    res.status(500).json({ error: 'Error al obtener artículos', detalle: error.message });
+    res.json([]); // Evita romper el frontend
   }
 });
 
 // PUT - Editar artículo
 app.put('/api/inventario/:id', async (req, res) => {
   const { id } = req.params;
-  const {
-    nombre, proveedor, cantidad, precio, fecha,
-    vidautil, ubicacion, estado, familia,
-    codigobarras
-  } = req.body;
+  const { nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia, codigobarras } = req.body;
 
   try {
     const query = `
@@ -86,11 +73,7 @@ app.put('/api/inventario/:id', async (req, res) => {
       WHERE id=$11
       RETURNING *;
     `;
-    const values = [
-      nombre, proveedor, cantidad, precio, fecha,
-      vidautil, ubicacion, estado, familia || null,
-      codigobarras || null, id
-    ];
+    const values = [nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia || null, codigobarras || null, id];
     const result = await pool.query(query, values);
     res.json({ message: 'Artículo actualizado correctamente', item: result.rows[0] });
   } catch (error) {
@@ -117,28 +100,19 @@ app.delete('/api/inventario/:id', async (req, res) => {
 app.get('/api/mantenimiento', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM mantenimiento ORDER BY fecha DESC');
-    res.json(result.rows);
+    res.json(Array.isArray(result.rows) ? result.rows : []);
   } catch (error) {
     console.error('Error al obtener mantenimientos:', error);
-    res.status(500).json({ error: 'Error al obtener mantenimientos', detalle: error.message });
+    res.json([]);
   }
 });
 
 // POST - Guardar mantenimiento con foto
 app.post('/api/mantenimiento', upload.single('fotoman'), async (req, res) => {
   try {
-    let {
-      maquina, linea, fecha, tecnico, tiempo,
-      sintomas, estadomotor, transmision, hidraulico,
-      neumatico, electrico, observaciones, estadoaccion
-    } = req.body;
-
+    let { maquina, linea, fecha, tecnico, tiempo, sintomas, estadomotor, transmision, hidraulico, neumatico, electrico, observaciones, estadoaccion } = req.body;
     const fotoman = req.file ? `/uploads/${req.file.filename}` : null;
-
-    // Transformar síntomas en array de PostgreSQL
-    sintomas = Array.isArray(sintomas) && sintomas.length > 0
-      ? `{${sintomas.map(s => `"${s}"`).join(',')}}`
-      : '{}';
+    sintomas = Array.isArray(sintomas) && sintomas.length ? `{${sintomas.map(s => `"${s}"`).join(',')}}` : '{}';
 
     const query = `
       INSERT INTO mantenimiento (
@@ -146,19 +120,10 @@ app.post('/api/mantenimiento', upload.single('fotoman'), async (req, res) => {
         estadomotor, transmision, hidraulico,
         neumatico, electrico, observaciones,
         estadoaccion, fotoman
-      ) VALUES (
-        $1,$2,$3,$4,$5,$6,
-        $7,$8,$9,
-        $10,$11,$12,
-        $13,$14
-      ) RETURNING *;
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+      RETURNING *;
     `;
-    const values = [
-      maquina, linea, fecha, tecnico, tiempo, sintomas,
-      estadomotor, transmision, hidraulico,
-      neumatico, electrico, observaciones,
-      estadoaccion, fotoman
-    ];
+    const values = [maquina, linea, fecha, tecnico, tiempo, sintomas, estadomotor, transmision, hidraulico, neumatico, electrico, observaciones, estadoaccion, fotoman];
     const result = await pool.query(query, values);
     res.status(201).json({ message: 'Mantenimiento guardado correctamente', item: result.rows[0] });
   } catch (error) {
@@ -170,18 +135,10 @@ app.post('/api/mantenimiento', upload.single('fotoman'), async (req, res) => {
 // PUT - Editar mantenimiento
 app.put('/api/mantenimiento/:id', upload.single('fotoman'), async (req, res) => {
   const { id } = req.params;
-  let {
-    maquina, linea, fecha, tecnico, tiempo,
-    sintomas, estadomotor, transmision, hidraulico,
-    neumatico, electrico, observaciones, estadoaccion
-  } = req.body;
-
+  let { maquina, linea, fecha, tecnico, tiempo, sintomas, estadomotor, transmision, hidraulico, neumatico, electrico, observaciones, estadoaccion } = req.body;
   try {
     const fotoman = req.file ? `/uploads/${req.file.filename}` : null;
-
-    sintomas = Array.isArray(sintomas) && sintomas.length > 0
-      ? `{${sintomas.map(s => `"${s}"`).join(',')}}`
-      : '{}';
+    sintomas = Array.isArray(sintomas) && sintomas.length ? `{${sintomas.map(s => `"${s}"`).join(',')}}` : '{}';
 
     const query = `
       UPDATE mantenimiento SET
@@ -197,7 +154,6 @@ app.put('/api/mantenimiento/:id', upload.single('fotoman'), async (req, res) => 
          neumatico, electrico, observaciones, estadoaccion, fotoman, id]
       : [maquina, linea, fecha, tecnico, tiempo, sintomas, estadomotor, transmision, hidraulico,
          neumatico, electrico, observaciones, estadoaccion, id];
-
     const result = await pool.query(query, values);
     res.json({ message: 'Mantenimiento actualizado correctamente', item: result.rows[0] });
   } catch (error) {
