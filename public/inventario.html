@@ -15,127 +15,110 @@
       body { font-size: 12px; color: #000; }
     }
   </style>
-  <script>
-    // Obtener rol y verificar sesión
-    const role = localStorage.getItem("role") || "viewer";
-    if (!localStorage.getItem("loggedIn")) {
-      alert("Debes iniciar sesión para acceder.");
-      window.location.href = "index.html";
-    }
-  </script>
 </head>
 <body class="bg-gray-100 text-gray-800">
-
-<!-- HEADER -->
-<header class="bg-white shadow-md sticky top-0 z-50">
-  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-    <a href="index.html" class="flex items-center space-x-2">
-      <img src="https://images.squarespace-cdn.com/content/v1/58a36221d482e9bca4af6eac/34694fc3-6f92-4054-8a58-3776436c00dc/IMG_9869+2.PNG?format=2500w" alt="Logo" class="h-10 w-auto"/>
-      <span class="text-xl font-bold text-red-600">SIMio</span>
-      <span id="rolVisual" class="text-sm text-gray-500 italic ml-4">(Rol: <span id="nombreRol">cargando...</span>)</span>
-    </a>
-    <nav class="hidden md:flex space-x-6 text-sm font-medium">
-      <a href="index.html" class="text-gray-700 hover:text-red-600">Home</a>
-      <a href="inventario.html" class="text-red-600 font-bold">Inventario</a>
-      <a href="mantenimiento.html" class="text-gray-700 hover:text-red-600">Mantenimiento</a>
-      <a href="maquinas.html" class="text-gray-700 hover:text-red-600">Diagrama de Máquinas</a>
-      <a href="info.html" class="text-gray-500 hover:text-red-600">ℹ️</a>
-    </nav>
-    <button id="menuToggle" class="md:hidden text-gray-700 focus:outline-none">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-        viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
-    </button>
-  </div>
-  <div id="mobileMenu" class="md:hidden hidden px-4 pb-4">
-    <a href="index.html" class="block py-2 text-gray-700 hover:text-red-600">Home</a>
-    <a href="inventario.html" class="block py-2 text-red-600 font-bold">Inventario</a>
-    <a href="mantenimiento.html" class="block py-2 text-gray-700 hover:text-red-600">Mantenimiento</a>
-    <a href="maquinas.html" class="block py-2 text-gray-700 hover:text-red-600">Diagrama de Máquinas</a>
-    <a href="info.html" class="block py-2 text-gray-700 hover:text-red-600">ℹ️</a>
-  </div>
-</header>
-
-<main class="max-w-7xl mx-auto mt-10 p-4">
-
-  <!-- Formulario agregar artículo -->
-  <h2 class="text-lg font-semibold mb-4">Agregar nuevo artículo</h2>
-  <form id="formInventario" class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-4 rounded shadow mb-6">
-    <input class="p-2 border rounded" name="nombre" placeholder="Nombre" required type="text"/>
-    <input class="p-2 border rounded" name="proveedor" placeholder="Proveedor" required type="text"/>
-    <input class="p-2 border rounded" name="cantidad" placeholder="Cantidad" required type="number"/>
-    <input class="p-2 border rounded" name="precio" placeholder="Precio" required step="0.01" type="number"/>
-    <input class="p-2 border rounded" name="fecha" required type="date"/>
-    <input class="p-2 border rounded" name="vidautil" placeholder="Vida útil (años)" required type="text"/>
-    <input class="p-2 border rounded" name="ubicacion" placeholder="Ubicación" required type="text"/>
-    <select name="estado" required class="p-2 border rounded">
-      <option value="">Seleccione Estado</option>
-      <option value="nuevo">Nuevo</option>
-      <option value="usado">Usado</option>
-      <option value="semi-nuevo">Semi-nuevo</option>
-    </select>
-    <input class="p-2 border rounded" name="familia" placeholder="Familia" type="text"/>
-    <input class="p-2 border rounded" name="codigobarras" placeholder="Código de barras" type="text"/>
-    <button class="col-span-full bg-red-600 text-white p-2 rounded hover:bg-red-700" type="submit">
-      Guardar
-    </button>
-  </form>
-
-  <script>
-    // Ocultar formulario si no es admin
-    if(role !== 'admin') {
-      const form = document.getElementById("formInventario");
-      if(form) form.style.display = 'none';
-    }
-  </script>
-
-  <!-- Filtros de inventario -->
-  <div class="bg-white p-4 rounded shadow mb-4">
-    <h3 class="text-md font-semibold mb-2">Filtrar inventario</h3>
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-      <input class="p-2 border rounded w-full" id="filtroNombre" placeholder="Nombre" type="text"/>
-      <input class="p-2 border rounded w-full" id="filtroFamilia" placeholder="Familia" type="text"/>
-      <input class="p-2 border rounded w-full" id="filtroProveedor" placeholder="Proveedor" type="text"/>
-      <input class="p-2 border rounded w-full" id="filtroUbicacion" placeholder="Ubicación" type="text"/>
-      <input class="p-2 border rounded w-full" id="filtroFecha" type="date"/>
+  <!-- HEADER -->
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="index.html" class="flex items-center space-x-2">
+        <img src="https://images.squarespace-cdn.com/content/v1/58a36221d482e9bca4af6eac/34694fc3-6f92-4054-8a58-3776436c00dc/IMG_9869+2.PNG?format=2500w" alt="Logo" class="h-10 w-auto"/>
+        <span class="text-xl font-bold text-red-600">SIMio</span>
+        <span id="rolVisual" class="text-sm text-gray-500 italic ml-4">
+          (Rol: <span id="nombreRol">cargando...</span>)
+        </span>
+      </a>
+      <nav class="hidden md:flex space-x-6 text-sm font-medium">
+        <a href="index.html" class="text-gray-700 hover:text-red-600">Home</a>
+        <a href="inventario.html" class="text-red-600 font-bold">Inventario</a>
+        <a href="mantenimiento.html" class="text-gray-700 hover:text-red-600">Mantenimiento</a>
+        <a href="maquinas.html" class="text-gray-700 hover:text-red-600">Diagrama de Máquinas</a>
+        <a href="info.html" class="text-gray-500 hover:text-red-600">ℹ️</a>
+      </nav>
+      <button id="menuToggle" class="md:hidden text-gray-700 focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+          viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
     </div>
-    <div class="mt-4 flex justify-end">
-      <button class="bg-blue-600 text-white px-4 py-2 rounded" onclick="filtrarInventario()">Filtrar</button>
-      <button class="ml-2 bg-gray-300 px-4 py-2 rounded" onclick="limpiarFiltros()">Limpiar</button>
+    <div id="mobileMenu" class="md:hidden hidden px-4 pb-4">
+      <a href="index.html" class="block py-2 text-gray-700 hover:text-red-600">Home</a>
+      <a href="inventario.html" class="block py-2 text-red-600 font-bold">Inventario</a>
+      <a href="mantenimiento.html" class="block py-2 text-gray-700 hover:text-red-600">Mantenimiento</a>
+      <a href="maquinas.html" class="block py-2 text-gray-700 hover:text-red-600">Diagrama de Máquinas</a>
+      <a href="info.html" class="block py-2 text-gray-700 hover:text-red-600">ℹ️</a>
     </div>
-  </div>
+  </header>
 
-  <!-- Tabla de inventario -->
-  <h2 class="text-lg font-semibold my-6">Inventario actual</h2>
-  <div class="flex justify-start gap-2 mb-2">
-    <button class="bg-green-600 text-white px-4 py-2 rounded" onclick="imprimirTabla()">Imprimir PDF</button>
-    <button class="bg-yellow-500 text-white px-4 py-2 rounded" onclick="exportarCSV()">Exportar CSV</button>
-  </div>
-  <div class="overflow-x-auto bg-white p-4 rounded shadow">
-    <table class="min-w-full table-auto" id="tablaInventario">
-      <thead class="bg-gray-200 text-left">
-        <tr>
-          <th class="p-2">Nombre</th>
-          <th class="p-2">Proveedor</th>
-          <th class="p-2">Cantidad</th>
-          <th class="p-2">Precio</th>
-          <th class="p-2">Fecha</th>
-          <th class="p-2">Vida útil</th>
-          <th class="p-2">Ubicación</th>
-          <th class="p-2">Estado</th>
-          <th class="p-2">Familia</th>
-          <th class="p-2">Código</th>
-          <th class="p-2">Editar</th>
-          <th class="p-2">Eliminar</th>
-        </tr>
-      </thead>
-      <tbody class="text-sm" id="cuerpoTabla"></tbody>
-    </table>
-  </div>
+  <main class="max-w-7xl mx-auto mt-10 p-4">
+    <!-- Formulario para agregar artículo -->
+    <h2 class="text-lg font-semibold mb-4">Agregar nuevo artículo</h2>
+    <form id="formInventario" class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-4 rounded shadow mb-6">
+      <input class="p-2 border rounded" name="nombre" placeholder="Nombre" required type="text"/>
+      <input class="p-2 border rounded" name="proveedor" placeholder="Proveedor" required type="text"/>
+      <input class="p-2 border rounded" name="cantidad" placeholder="Cantidad" required type="number"/>
+      <input class="p-2 border rounded" name="precio" placeholder="Precio" required step="0.01" type="number"/>
+      <input class="p-2 border rounded" name="fecha" required type="date"/>
+      <input class="p-2 border rounded" name="vidautil" placeholder="Vida útil (años)" required type="text"/>
+      <input class="p-2 border rounded" name="ubicacion" placeholder="Ubicación" required type="text"/>
+      <select name="estado" required class="p-2 border rounded">
+        <option value="">Seleccione Estado</option>
+        <option value="nuevo">Nuevo</option>
+        <option value="usado">Usado</option>
+        <option value="semi-nuevo">Semi-nuevo</option>
+      </select>
+      <input class="p-2 border rounded" name="familia" placeholder="Familia" type="text"/>
+      <input class="p-2 border rounded" name="codigobarras" placeholder="Código de barras" type="text"/>
+      <button class="col-span-full bg-red-600 text-white p-2 rounded hover:bg-red-700" type="submit">Guardar</button>
+    </form>
 
-  <!-- Modal edición -->
+    <!-- Filtros de inventario -->
+    <div class="bg-white p-4 rounded shadow mb-4">
+      <h3 class="text-md font-semibold mb-2">Filtrar inventario</h3>
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <input class="p-2 border rounded w-full" id="filtroNombre" placeholder="Nombre" type="text"/>
+        <input class="p-2 border rounded w-full" id="filtroFamilia" placeholder="Familia" type="text"/>
+        <input class="p-2 border rounded w-full" id="filtroProveedor" placeholder="Proveedor" type="text"/>
+        <input class="p-2 border rounded w-full" id="filtroUbicacion" placeholder="Ubicación" type="text"/>
+        <input class="p-2 border rounded w-full" id="filtroFecha" type="date"/>
+      </div>
+      <div class="mt-4 flex justify-end">
+        <button class="bg-blue-600 text-white px-4 py-2 rounded" onclick="filtrarInventario()">Filtrar</button>
+        <button class="ml-2 bg-gray-300 px-4 py-2 rounded" onclick="limpiarFiltros()">Limpiar</button>
+      </div>
+    </div>
+
+    <!-- Inventario actual -->
+    <h2 class="text-lg font-semibold my-6">Inventario actual</h2>
+    <div class="flex justify-start gap-2 mb-2">
+      <button class="bg-green-600 text-white px-4 py-2 rounded" onclick="imprimirTabla()">Imprimir PDF</button>
+      <button class="bg-yellow-500 text-white px-4 py-2 rounded" onclick="exportarCSV()">Exportar CSV</button>
+    </div>
+    <div class="overflow-x-auto bg-white p-4 rounded shadow">
+      <table class="min-w-full table-auto" id="tablaInventario">
+        <thead class="bg-gray-200 text-left">
+          <tr>
+            <th class="p-2">Nombre</th>
+            <th class="p-2">Proveedor</th>
+            <th class="p-2">Cantidad</th>
+            <th class="p-2">Precio</th>
+            <th class="p-2">Fecha</th>
+            <th class="p-2">Vida útil</th>
+            <th class="p-2">Ubicación</th>
+            <th class="p-2">Estado</th>
+            <th class="p-2">Familia</th>
+            <th class="p-2">Código</th>
+            <th class="p-2">Editar</th>
+            <th class="p-2">Eliminar</th>
+          </tr>
+        </thead>
+        <tbody class="text-sm" id="cuerpoTabla"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Modal de edición -->
   <div id="modalEditar" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden z-50">
     <div class="bg-white p-6 rounded w-full max-w-xl">
       <h2 class="text-xl font-semibold mb-4">Editar artículo</h2>
@@ -166,77 +149,188 @@
     </div>
   </div>
 
-<!-- Scripts generales -->
-<script>
-  // Mostrar rol
-  document.addEventListener("DOMContentLoaded", () => {
-    const spanRol = document.getElementById("nombreRol");
-    if(spanRol) spanRol.textContent = role;
+  <!-- Scripts -->
+  <script>
+    const role = localStorage.getItem("role") || "viewer";
 
-    // Ocultar botones si no es admin
-    if(role !== 'admin') {
-      document.querySelectorAll(".btn-editar, .btn-borrar").forEach(btn => btn.classList.add("hidden"));
-      const formEditar = document.getElementById("formEditar");
-      if(formEditar) formEditar.style.display = 'none';
-    }
-
-    cargarInventario();
-  });
-
-  async function cargarInventario() {
-    try {
-      const res = await fetch("/api/inventario");
-      const data = await res.json();
-      const cuerpo = document.getElementById("cuerpoTabla");
-      cuerpo.innerHTML = "";
-      if(!Array.isArray(data)) throw new Error("Datos de inventario no válidos");
-      data.forEach(item => {
-        const fila = document.createElement("tr");
-        fila.innerHTML = `
-          <td>${item.nombre}</td>
-          <td>${item.proveedor}</td>
-          <td>${item.cantidad}</td>
-          <td>${item.precio}</td>
-          <td>${item.fecha}</td>
-          <td>${item.vidautil}</td>
-          <td>${item.ubicacion}</td>
-          <td>${item.estado}</td>
-          <td>${item.familia || ""}</td>
-          <td>${item.codigobarras || ""}</td>
-          <td class="text-center">
-            <button class="btn-editar ${role==='admin'?'':'hidden'}" onclick="abrirModalEdicion(${item.id}, this)">✏️</button>
-          </td>
-          <td class="text-center">
-            <button class="btn-borrar ${role==='admin'?'':'hidden'}" onclick="eliminarArticulo(${item.id})">🗑️</button>
-          </td>
-        `;
-        cuerpo.appendChild(fila);
+    function validarFormulario(form){
+      let valid = true;
+      const requiredFields = ['nombre','proveedor','cantidad','precio','fecha','vidautil','ubicacion','estado'];
+      requiredFields.forEach(name => {
+        const input = form.elements[name];
+        if(input && !input.value.trim()){
+          input.classList.add("border-red-500");
+          input.setAttribute("title","Campo obligatorio");
+          valid = false;
+        } else if(input){
+          input.classList.remove("border-red-500");
+          input.removeAttribute("title");
+        }
       });
-    } catch(err) {
-      console.error("Error al cargar inventario:", err);
+      return valid;
     }
-  }
 
-  // Aquí seguirían funciones guardarArticulo, eliminarArticulo, abrirModalEdicion, cerrarModal, exportarCSV, imprimirTabla, filtrarInventario, limpiarFiltros
-</script>
+    async function cargarInventario(){
+      try{
+        const res = await fetch("https://gsmio-production-3b4c.up.railway.app/api/inventario");
+        const data = await res.json();
+        if(!Array.isArray(data)) throw new Error("Datos de inventario no válidos");
+        const cuerpo = document.getElementById("cuerpoTabla");
+        cuerpo.innerHTML = "";
+        data.forEach(item => {
+          const fila = document.createElement("tr");
+          fila.innerHTML = `
+            <td>${item.nombre}</td>
+            <td>${item.proveedor}</td>
+            <td>${item.cantidad}</td>
+            <td>${item.precio}</td>
+            <td>${item.fecha}</td>
+            <td>${item.vidautil}</td>
+            <td>${item.ubicacion}</td>
+            <td>${item.estado}</td>
+            <td>${item.familia || ''}</td>
+            <td>${item.codigobarras || ''}</td>
+            <td class="text-center">
+              <button class="${role==='admin'?'':'hidden'}" onclick="abrirModalEdicion(${item.id}, this)">✏️</button>
+            </td>
+            <td class="text-center">
+              <button class="${role==='admin'?'':'hidden'}" onclick="eliminarArticulo(${item.id})">🗑️</button>
+            </td>
+          `;
+          cuerpo.appendChild(fila);
+        });
+      }catch(err){
+        console.error("Error al cargar inventario:", err);
+      }
+    }
 
-</main>
+    async function guardarArticulo(datos, form){
+      if(!validarFormulario(form)) return;
+      try{
+        const res = await fetch("https://gsmio-production-3b4c.up.railway.app/api/inventario",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify(datos)
+        });
+        if(!res.ok) throw new Error(await res.text());
+        form.reset();
+        cargarInventario();
+      }catch(err){
+        alert("Error al guardar artículo");
+        console.error(err);
+      }
+    }
 
-<script>
-  const menuToggle = document.getElementById("menuToggle");
-  const mobileMenu = document.getElementById("mobileMenu");
-  menuToggle.addEventListener("click", () => {
-    mobileMenu.classList.toggle("hidden");
-  });
-</script>
+    async function eliminarArticulo(id){
+      if(!confirm("¿Eliminar este artículo?")) return;
+      try{
+        const res = await fetch(`https://gsmio-production-3b4c.up.railway.app/api/inventario/${id}`, {method:"DELETE"});
+        if(!res.ok) throw new Error(await res.text());
+        cargarInventario();
+      }catch(err){
+        alert("Error al eliminar artículo");
+        console.error(err);
+      }
+    }
 
-<footer class="bg-gray-600 text-gray-200 text-center py-6 mt-10 text-sm">
-  <div class="max-w-4xl mx-auto px-4 flex flex-col items-center space-y-2">
-    <p>© 2025 <strong>GEOWAY</strong>, Technology-Based Initiative – IBT. All rights reserved.</p>
-    <a href="https://geo-way.github.io/GeoWay.io/index.html" target="_blank" class="hover:opacity-80 transition-opacity">
-      <img src="https://geo-way.github.io/GeoWay.io/images/Logo5.png" alt="GEOWAY Logo" class="h-8 invert">
-    </a>
-  </div>
-</footer>
+    function abrirModalEdicion(id, boton){
+      const fila = boton.closest("tr").querySelectorAll("td");
+      const form = document.getElementById("formEditar");
+      document.getElementById("idArticulo").value = id;
+      form.nombre.value = fila[0].innerText;
+      form.proveedor.value = fila[1].innerText;
+      form.cantidad.value = fila[2].innerText;
+      form.precio.value = fila[3].innerText;
+      form.fecha.value = fila[4].innerText;
+      form.vidautil.value = fila[5].innerText;
+      form.ubicacion.value = fila[6].innerText;
+      form.estado.value = fila[7].innerText;
+      form.familia.value = fila[8].innerText;
+      form.codigobarras.value = fila[9].innerText;
+      document.getElementById("modalEditar").classList.remove("hidden");
+    }
+
+    function cerrarModal(){
+      document.getElementById("modalEditar").classList.add("hidden");
+    }
+
+    document.getElementById("formEditar").addEventListener("submit", async function(e){
+      e.preventDefault();
+      const form = e.target;
+      if(!validarFormulario(form)) return;
+      const datos = Object.fromEntries(new FormData(form).entries());
+      const id = datos.id; delete datos.id;
+      try{
+        const res = await fetch(`https://gsmio-production-3b4c.up.railway.app/api/inventario/${id}`,{
+          method:"PUT",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify(datos)
+        });
+        if(!res.ok) throw new Error(await res.text());
+        cerrarModal();
+        cargarInventario();
+      }catch(err){
+        alert("Error al actualizar artículo");
+        console.error(err);
+      }
+    });
+
+    document.getElementById("formInventario").addEventListener("submit", async function(e){
+      e.preventDefault();
+      await guardarArticulo(Object.fromEntries(new FormData(e.target).entries()), e.target);
+    });
+
+    document.addEventListener("DOMContentLoaded", ()=>{
+      cargarInventario();
+      document.getElementById("nombreRol").textContent = role;
+      if(role!=='admin') document.getElementById("formInventario").style.display='none';
+      document.getElementById("menuToggle").addEventListener("click", ()=>{
+        document.getElementById("mobileMenu").classList.toggle("hidden");
+      });
+    });
+
+    function filtrarInventario(){
+      const n=document.getElementById("filtroNombre").value.toLowerCase();
+      const f=document.getElementById("filtroFamilia").value.toLowerCase();
+      const p=document.getElementById("filtroProveedor").value.toLowerCase();
+      const u=document.getElementById("filtroUbicacion").value.toLowerCase();
+      const d=document.getElementById("filtroFecha").value;
+      document.querySelectorAll("#cuerpoTabla tr").forEach(row=>{
+        const tds=row.querySelectorAll("td");
+        const coincide=
+          (!n||tds[0].textContent.toLowerCase().includes(n)) &&
+          (!p||tds[1].textContent.toLowerCase().includes(p)) &&
+          (!d||tds[4].textContent===d) &&
+          (!u||tds[6].textContent.toLowerCase().includes(u)) &&
+          (!f||tds[8].textContent.toLowerCase().includes(f));
+        row.style.display=coincide?"":"none";
+      });
+    }
+
+    function limpiarFiltros(){
+      document.getElementById("filtroNombre").value="";
+      document.getElementById("filtroFamilia").value="";
+      document.getElementById("filtroProveedor").value="";
+      document.getElementById("filtroUbicacion").value="";
+      document.getElementById("filtroFecha").value="";
+      filtrarInventario();
+    }
+
+    function exportarCSV(){
+      const filas=document.querySelectorAll("#cuerpoTabla tr");
+      let csv="Nombre,Proveedor,Cantidad,Precio,Fecha,Vida útil,Ubicación,Estado,Familia,Código\n";
+      filas.forEach(r=>{
+        const c=Array.from(r.querySelectorAll("td")).slice(0,10).map(td=>td.textContent.trim());
+        csv+=c.join(",")+"\n";
+      });
+      const blob=new Blob([csv],{type:"text/csv"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url; a.download="inventario.csv"; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function imprimirTabla(){ window.print(); }
+  </script>
 </body>
 </html>
