@@ -78,10 +78,13 @@ app.get('/api/inventario', async (req, res) => {
     }
     res.json(result.rows);
   } catch (error) {
-    console.error('Error al obtener artículos:', error);
-    res.status(500).json({ error: 'Error al obtener artículos', detalle: error.message });
-  }
-});
+  console.error("ERROR REAL BD:");
+  console.error(error);
+  res.status(500).json({
+    error: error.message,
+    detail: error.detail
+  });
+}
 
 // PUT - Editar artículo
 app.put('/api/inventario/:id', async (req, res) => {
