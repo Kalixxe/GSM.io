@@ -15,18 +15,14 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    /* Estilos generales */
     body { font-family: sans-serif; }
-    /* Estilos de impresión: ajusta a landscape; oculta header, nav y botones */
     @media print {
       @page { size: landscape; }
       header, nav, button { display: none !important; }
-      /* Estilizamos la tabla en rojo */
       table { border-collapse: collapse; width: 100%; }
       table, th, td { border: 1px solid #cc0000; }
       th { background-color: #cc0000; color: #fff; padding: 8px; }
       td { padding: 6px; }
-      /* Ajustes generales */
       body { font-size: 12px; color: #000; }
     }
   </style>
@@ -49,12 +45,10 @@
       </nav>
       <button id="menuToggle" class="md:hidden text-gray-700 focus:outline-none">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 6h16M4 12h16M4 18h16" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
     </div>
-    <!-- Menú para móviles -->
     <div id="mobileMenu" class="md:hidden hidden px-4 pb-4">
       <a href="index.html" class="block py-2 text-gray-700 hover:text-red-600">Home</a>
       <a href="inventario.html" class="block py-2 text-gray-700 hover:text-red-600">Inventario</a>
@@ -66,7 +60,6 @@
 
   <!-- MAIN -->
   <main class="max-w-7xl mx-auto mt-10 p-4">
-    <!-- Formulario de mantenimiento -->
     <h2 class="text-lg font-semibold text-gray-700 mb-4">📄 Formulario de Mantenimiento</h2>
     <form id="formMantenimiento" enctype="multipart/form-data" class="grid md:grid-cols-3 gap-4 bg-white p-6 rounded shadow mb-6">
       <input class="p-2 border rounded" name="maquina" placeholder="Máquina" required />
@@ -76,12 +69,10 @@
       <input class="p-2 border rounded" name="tiempo" type="number" placeholder="Horas mantenimiento" step="0.1" />
       <input class="p-2 border rounded" name="observaciones" placeholder="Observaciones" />
       <input type="hidden" name="id" id="idMantenimiento" />
-      <!-- Campo de imagen (opcional) -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1" for="fotoman">Subir o Tomar Foto</label>
         <input class="p-2 border rounded w-full" type="file" name="fotoman" id="fotoman" accept="image/*" capture="environment" />
       </div>
-      <!-- Selects -->
       <select name="estadomotor" class="p-2 border rounded">
         <option value="">Motor</option>
         <option>Operativo</option>
@@ -125,7 +116,6 @@
         <option>En seguimiento</option>
         <option>Fuera de servicio</option>
       </select>
-      <!-- Checkboxes de síntomas -->
       <fieldset class="col-span-full space-x-2">
         <legend class="font-semibold">Síntomas Encontrados</legend>
         <label><input type="checkbox" name="sintomas" value="Ruido Anormal" /> Ruido Anormal</label>
@@ -144,7 +134,6 @@
 
     <hr class="my-10 border-t-2"/>
 
-    <!-- Filtros y Tabla de Mantenimientos -->
     <h2 class="text-xl font-semibold text-gray-700 mb-4">📋 Filtrar mantenimientos</h2>
     <div class="bg-white p-4 rounded shadow mb-6">
       <div class="grid md:grid-cols-6 gap-4 mb-4">
@@ -200,7 +189,6 @@
     </div>
 
     <script>
-      // Actualización del rol en el DOM
       document.getElementById("nombreRol").innerText = rolUsuario;
       if (rolUsuario === "viewer") {
         const btnGuardar = document.getElementById("btnGuardar");
@@ -223,6 +211,9 @@
 
   <!-- Scripts generales -->
   <script>
+    // ✅ URL base de Railway centralizada — cambia solo aquí si el dominio cambia
+    const API_BASE = "https://gsmio-production-3b4c.up.railway.app";
+
     let datosMantenimiento = [];
     let idEditando = null;
 
@@ -262,20 +253,20 @@
       data.forEach(row => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td class="p-2">${row.fecha}</td>
-          <td class="p-2">${row.maquina}</td>
-          <td class="p-2">${row.linea}</td>
-          <td class="p-2">${row.tecnico}</td>
-          <td class="p-2">${row.tiempo}</td>
-          <td class="p-2">${row.estadomotor}</td>
-          <td class="p-2">${row.transmision}</td>
-          <td class="p-2">${row.hidraulico}</td>
-          <td class="p-2">${row.neumatico}</td>
-          <td class="p-2">${row.electrico}</td>
-          <td class="p-2">${row.sintomas}</td>
-          <td class="p-2">${row.observaciones}</td>
-          <td class="p-2">${row.estadoaccion}</td>
-          <td class="p-2"><button onclick="verFoto('${row.fotoman}')" class="text-blue-600 underline">Ver foto</button></td>
+          <td class="p-2">${row.fecha || ""}</td>
+          <td class="p-2">${row.maquina || ""}</td>
+          <td class="p-2">${row.linea || ""}</td>
+          <td class="p-2">${row.tecnico || ""}</td>
+          <td class="p-2">${row.tiempo || ""}</td>
+          <td class="p-2">${row.estadomotor || ""}</td>
+          <td class="p-2">${row.transmision || ""}</td>
+          <td class="p-2">${row.hidraulico || ""}</td>
+          <td class="p-2">${row.neumatico || ""}</td>
+          <td class="p-2">${row.electrico || ""}</td>
+          <td class="p-2">${row.sintomas || ""}</td>
+          <td class="p-2">${row.observaciones || ""}</td>
+          <td class="p-2">${row.estadoaccion || ""}</td>
+          <td class="p-2">${row.fotoman ? `<button onclick="verFoto('${row.fotoman}')" class="text-blue-600 underline">Ver foto</button>` : ""}</td>
           <td class="p-2 text-center">
             ${rolUsuario === "viewer" ? "" : `<button onclick="editarMantenimiento(${row.id})" class="text-yellow-600 hover:scale-110 transition">✏️</button>`}
           </td>
@@ -287,36 +278,47 @@
       });
     }
 
-async function cargarMantenimientos() {
-  try {
-    const res = await fetch("https://sim-io.onrender.com/api/mantenimiento");
-    datosMantenimiento = await res.json();
-    renderTabla(datosMantenimiento);
-    
-    // Verificar si hay parámetro "maquina" en la URL y aplicar el filtrado.
-    const params = new URLSearchParams(window.location.search);
-    const maquinaParam = params.get("maquina");
-    if (maquinaParam) {
-      const filtroInput = document.getElementById("filtroMaquina");
-      if (filtroInput) {
-        filtroInput.value = maquinaParam;
-        aplicarFiltros();
+    function verFoto(url) {
+      if (!url) return;
+      document.getElementById("imagenGrande").src = `${API_BASE}${url}`;
+      document.getElementById("modalFoto").classList.remove("hidden");
+    }
+
+    document.getElementById("modalFoto").addEventListener("click", () => {
+      document.getElementById("modalFoto").classList.add("hidden");
+    });
+
+    async function cargarMantenimientos() {
+      try {
+        const res = await fetch(`${API_BASE}/api/mantenimiento`);
+        if (!res.ok) throw new Error(`Error del servidor: ${res.status}`);
+        datosMantenimiento = await res.json();
+        if (!Array.isArray(datosMantenimiento)) throw new Error("Respuesta no válida del servidor");
+        renderTabla(datosMantenimiento);
+
+        const params = new URLSearchParams(window.location.search);
+        const maquinaParam = params.get("maquina");
+        if (maquinaParam) {
+          const filtroInput = document.getElementById("filtroMaquina");
+          if (filtroInput) {
+            filtroInput.value = maquinaParam;
+            aplicarFiltros();
+          }
+        }
+
+        generarGraficos();
+      } catch (err) {
+        console.error("Error al cargar mantenimientos:", err);
+        alert("⚠️ No se pudo cargar el historial de mantenimientos.\n" + err.message);
       }
     }
-    
-    // Generar gráficos, etc.
-    generarGraficos();
-  } catch (err) {
-    console.error("Error al cargar mantenimientos:", err);
-  }
-}
 
     window.onload = cargarMantenimientos;
 
     async function eliminarMantenimiento(id) {
       if (!confirm("¿Estás seguro de eliminar este mantenimiento?")) return;
       try {
-        const res = await fetch(`https://sim-io.onrender.com/api/mantenimiento/${id}`, { method: "DELETE" });
+        const res = await fetch(`${API_BASE}/api/mantenimiento/${id}`, { method: "DELETE" });
         const text = await res.text();
         if (!res.ok) throw new Error(text);
         alert("✅ Eliminado correctamente.");
@@ -369,96 +371,37 @@ async function cargarMantenimientos() {
       window.URL.revokeObjectURL(url);
     }
 
-    // Función para generar estadísticas básicas y gráfica de línea de tiempo por máquina
     function generarEstadisticasYGrafica() {
-      // Crear un contenedor que se inyectará dinámicamente para el informe adicional solo en impresión
       let statsContainer = document.getElementById("printStats");
       if (!statsContainer) {
         statsContainer = document.createElement("div");
         statsContainer.id = "printStats";
-        // Estilos básicos para el bloque de estadísticas (solo en impresión)
         statsContainer.style.marginTop = "20px";
         statsContainer.style.borderTop = "2px solid #cc0000";
         statsContainer.style.paddingTop = "10px";
         document.body.appendChild(statsContainer);
       }
-      // Limpia el contenedor
       statsContainer.innerHTML = "";
-      
-      // Genera estadísticas básicas: total de mantenimientos y conteo por máquina
       const total = datosMantenimiento.length;
       const countByMachine = {};
       datosMantenimiento.forEach(item => {
         const machine = item.maquina || "Sin Máquina";
         countByMachine[machine] = (countByMachine[machine] || 0) + 1;
       });
-      
-      // Crea un bloque de texto para las estadísticas
       const statsText = document.createElement("div");
       statsText.innerHTML = `<h2 style="color:#cc0000;">Estadísticas Básicas</h2>
         <p>Total de Mantenimientos: <strong>${total}</strong></p>
         <ul>${Object.keys(countByMachine).map(machine => `<li>${machine}: ${countByMachine[machine]}</li>`).join("")}</ul>`;
       statsContainer.appendChild(statsText);
-      
-      // Crear un canvas para la gráfica de línea de tiempo por máquina
-      const canvasMachine = document.createElement("canvas");
-      canvasMachine.id = "machineTimelineChart";
-      canvasMachine.style.width = "100%";
-      canvasMachine.style.height = "400px";
-      statsContainer.appendChild(canvasMachine);
-      
-      // Preparar datos para la gráfica: para cada máquina, ordena por fecha y cuenta mantenimientos
-      const machineDates = {};
-      datosMantenimiento.forEach(item => {
-        const machine = item.maquina || "Sin Máquina";
-        const date = item.fecha ? item.fecha.split("T")[0] : "Sin Fecha";
-        if (!machineDates[machine]) {
-          machineDates[machine] = {};
-        }
-        machineDates[machine][date] = (machineDates[machine][date] || 0) + 1;
-      });
-      
-      // Para simplificar, tomaremos la máquina con mayor mantenimientos para la gráfica
-      const machineMax = Object.keys(machineDates).reduce((prev, curr) => {
-        return (Object.values(machineDates[curr]).reduce((a, b) => a + b, 0) >
-                Object.values(machineDates[prev]).reduce((a, b) => a + b, 0)) ? curr : prev;
-      });
-      
-      // Ordena las fechas para la máquina seleccionada
-      const dates = Object.keys(machineDates[machineMax]).sort();
-      const counts = dates.map(date => machineDates[machineMax][date]);
-      
-      // Dibuja la gráfica de línea de tiempo por máquina
-      const ctxMachine = document.getElementById('machineTimelineChart').getContext('2d');
-      new Chart(ctxMachine, {
-        type: 'line',
-        data: {
-          labels: dates,
-          datasets: [{
-            label: `Mantenimientos en ${machineMax}`,
-            data: counts,
-            borderColor: 'rgba(204,0,0,1)',
-            backgroundColor: 'rgba(204,0,0,0.2)',
-            fill: true,
-          }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
     }
 
-    // Evento de impresión: antes de imprimir, inyecta el bloque de estadísticas y gráfica
-    window.onbeforeprint = function() {
-      generarEstadisticasYGrafica();
-    };
-    // Después de imprimir, elimina el bloque agregado
+    window.onbeforeprint = function() { generarEstadisticasYGrafica(); };
     window.onafterprint = function() {
       const statsContainer = document.getElementById("printStats");
       if (statsContainer) statsContainer.remove();
     };
 
-    // Función para generar los gráficos en el bloque "Informe Técnico"
     function generarGraficos() {
-      // Gráfico 1: Línea de tiempo de mantenimientos
       const fechas = {};
       datosMantenimiento.forEach(item => {
         const fecha = item.fecha ? item.fecha.split("T")[0] : 'Sin fecha';
@@ -466,23 +409,18 @@ async function cargarMantenimientos() {
       });
       const labelsTimeline = Object.keys(fechas).sort();
       const dataTimeline = labelsTimeline.map(fecha => fechas[fecha]);
-      const ctxTimeline = document.getElementById('timelineChart').getContext('2d');
-      new Chart(ctxTimeline, {
-        type: 'line',
-        data: {
-          labels: labelsTimeline,
-          datasets: [{
-            label: 'Mantenimientos',
-            data: dataTimeline,
-            borderColor: 'rgba(75,192,192,1)',
-            backgroundColor: 'rgba(75,192,192,0.2)',
-            fill: true,
-          }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
+      const ctxTimeline = document.getElementById('timelineChart');
+      if (ctxTimeline) {
+        new Chart(ctxTimeline.getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: labelsTimeline,
+            datasets: [{ label: 'Mantenimientos', data: dataTimeline, borderColor: 'rgba(75,192,192,1)', backgroundColor: 'rgba(75,192,192,0.2)', fill: true }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
 
-      // Gráfico 2: Barras por Línea
       const mantenimientosPorLinea = {};
       datosMantenimiento.forEach(item => {
         const linea = item.linea || 'Sin Línea';
@@ -490,23 +428,18 @@ async function cargarMantenimientos() {
       });
       const labelsLine = Object.keys(mantenimientosPorLinea);
       const dataBar = labelsLine.map(linea => mantenimientosPorLinea[linea]);
-      const ctxBar = document.getElementById('lineBarChart').getContext('2d');
-      new Chart(ctxBar, {
-        type: 'bar',
-        data: {
-          labels: labelsLine,
-          datasets: [{
-            label: 'Mantenimientos por Línea',
-            data: dataBar,
-            backgroundColor: 'rgba(153,102,255,0.6)',
-            borderColor: 'rgba(153,102,255,1)',
-            borderWidth: 1
-          }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
+      const ctxBar = document.getElementById('lineBarChart');
+      if (ctxBar) {
+        new Chart(ctxBar.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: labelsLine,
+            datasets: [{ label: 'Mantenimientos por Línea', data: dataBar, backgroundColor: 'rgba(153,102,255,0.6)', borderColor: 'rgba(153,102,255,1)', borderWidth: 1 }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
 
-      // Gráfico 3: Torta por Estado
       const estadoDistribucion = {};
       datosMantenimiento.forEach(item => {
         const estado = item.estadoaccion || 'Sin Estado';
@@ -514,23 +447,17 @@ async function cargarMantenimientos() {
       });
       const labelsPie = Object.keys(estadoDistribucion);
       const dataPie = labelsPie.map(estado => estadoDistribucion[estado]);
-      const ctxPie = document.getElementById('statusPieChart').getContext('2d');
-      new Chart(ctxPie, {
-        type: 'pie',
-        data: {
-          labels: labelsPie,
-          datasets: [{
-            data: dataPie,
-            backgroundColor: [
-              'rgba(255,99,132,0.6)',
-              'rgba(54,162,235,0.6)',
-              'rgba(255,206,86,0.6)',
-              'rgba(75,192,192,0.6)'
-            ]
-          }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
+      const ctxPie = document.getElementById('statusPieChart');
+      if (ctxPie) {
+        new Chart(ctxPie.getContext('2d'), {
+          type: 'pie',
+          data: {
+            labels: labelsPie,
+            datasets: [{ data: dataPie, backgroundColor: ['rgba(255,99,132,0.6)', 'rgba(54,162,235,0.6)', 'rgba(255,206,86,0.6)', 'rgba(75,192,192,0.6)'] }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
     }
   </script>
 
@@ -577,8 +504,8 @@ async function cargarMantenimientos() {
         try {
           const method = idEditando ? "PUT" : "POST";
           const url = idEditando
-            ? `https://sim-io.onrender.com/api/mantenimiento/${idEditando}`
-            : `https://sim-io.onrender.com/api/mantenimiento`;
+            ? `${API_BASE}/api/mantenimiento/${idEditando}`
+            : `${API_BASE}/api/mantenimiento`;
           const res = await fetch(url, { method, body: formData });
           if (!res.ok) throw new Error(await res.text());
           alert(`✅ Mantenimiento ${idEditando ? "actualizado" : "guardado"} correctamente.`);
@@ -593,46 +520,24 @@ async function cargarMantenimientos() {
     }
   </script>
 
-  <!-- Actualización del rol en el DOM -->
   <script>
-    document.getElementById("nombreRol").innerText = rolUsuario;
-    if (rolUsuario === "viewer") {
-      const btnGuardar = document.getElementById("btnGuardar");
-      if (btnGuardar) btnGuardar.style.display = "none";
-    }
-    window.addEventListener("DOMContentLoaded", () => {
-      const spanRol = document.getElementById("nombreRol");
-      if (spanRol) {
-        const role = localStorage.getItem("role") || "viewer";
-        spanRol.textContent = role;
+    document.addEventListener("DOMContentLoaded", () => {
+      const params = new URLSearchParams(window.location.search);
+      const maquina = params.get("maquina");
+      if (maquina) {
+        const filtroInput = document.getElementById("filtroMaquina");
+        if (filtroInput) {
+          filtroInput.value = maquina;
+          if (typeof aplicarFiltros === "function") aplicarFiltros();
+        }
       }
     });
   </script>
 
-  <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const params = new URLSearchParams(window.location.search);
-    const maquina = params.get("maquina");
-    if (maquina) {
-      const filtroInput = document.getElementById("filtroMaquina");
-      if (filtroInput) {
-        filtroInput.value = maquina;
-        // Llama a la función de filtrado, si está definida
-        if (typeof aplicarFiltros === "function") {
-          aplicarFiltros();
-        }
-      }
-    }
-  });
-</script>
-
-
   <!-- Footer -->
   <footer class="bg-gray-600 text-gray-200 text-center py-6 mt-10 text-sm">
     <div class="max-w-4xl mx-auto px-4 flex flex-col items-center space-y-2">
-      <p>
-        © 2025 <strong>GEOWAY</strong>, Technology-Based Initiative – IBT. All rights reserved.
-      </p>
+      <p>© 2025 <strong>GEOWAY</strong>, Technology-Based Initiative – IBT. All rights reserved.</p>
       <a href="https://geo-way.github.io/GeoWay.io/index.html" target="_blank" class="hover:opacity-80 transition-opacity">
         <img src="https://geo-way.github.io/GeoWay.io/images/Logo5.png" alt="GEOWAY Logo" class="h-8 invert">
       </a>
