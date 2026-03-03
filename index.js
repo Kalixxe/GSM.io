@@ -227,7 +227,9 @@ app.delete('/api/mantenimiento/:id', async (req, res) => {
   }
 });
 // Servir archivos estáticos DESPUÉS de las rutas API
+
 app.use(express.static('public'));
+
 // ------------------ FIN ------------------ //
 app.listen(port, () => {
   console.log(`Servidor corriendo en el puerto ${port}`);
