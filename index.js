@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const { Pool } = require('pg');
 const multer = require('multer');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 
@@ -15,10 +16,9 @@ const port = process.env.PORT || 8080;
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Configuración de Multer para fotos
-const upload = multer({ dest: 'uploads/' });
+// Multer — almacenamiento en memoria (no en disco)
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Conexión a PostgreSQL
 const pool = new Pool({
@@ -26,12 +26,16 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
+// Conexión a Supabase Storage
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SECRET_KEY
+);
+
 // ---------------------------------
-// Captura de errores globales
 process.on('uncaughtException', (err) => {
   console.error('Excepción no atrapada:', err);
 });
-
 process.on('unhandledRejection', (err) => {
   console.error('Rechazo no manejado:', err);
 });
@@ -39,23 +43,18 @@ process.on('unhandledRejection', (err) => {
 
 // ------------------ LOGIN ------------------ //
 
-// Usuarios definidos en el servidor (no visibles desde el navegador)
 const users = {
-  "admin":  { password: "Ca2025",     role: "admin"  },
-  "user1":  { password: "Global26", role: "viewer" },
-  "Tec1":  { password: "Mat26", role: "viewer" }
+  "admin": { password: "Ca2025",     role: "admin"  },
+  "user1": { password: "Global26", role: "viewer" },
+  "Tec1": { password: "Mat26",     role: "viewer"  }
 };
 
-// POST - Login
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
-
   if (!username || !password) {
     return res.status(400).json({ error: 'Usuario y contraseña son obligatorios' });
   }
-
   const user = users[username];
-
   if (user && user.password === password) {
     res.json({ success: true, role: user.role, user: username });
   } else {
@@ -65,22 +64,17 @@ app.post('/api/login', (req, res) => {
 
 // ------------------ INVENTARIO ------------------ //
 
-// POST - Crear artículo
 app.post('/api/inventario', async (req, res) => {
   try {
     const { nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia, codigobarras } = req.body;
-
     if (!nombre || !proveedor || !cantidad || !precio || !fecha || !vidautil || !ubicacion || !estado) {
       return res.status(400).json({ error: 'Faltan campos obligatorios' });
     }
-
     const query = `
       INSERT INTO inventario (nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia, codigobarras)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-      RETURNING *;
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *;
     `;
     const values = [nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia || null, codigobarras || null];
-
     const result = await pool.query(query, values);
     res.status(201).json({ message: 'Artículo guardado correctamente', item: result.rows[0] });
   } catch (error) {
@@ -89,11 +83,9 @@ app.post('/api/inventario', async (req, res) => {
   }
 });
 
-// GET - Listar artículos
 app.get('/api/inventario', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM inventario ORDER BY fecha DESC');
-    if (!Array.isArray(result.rows)) throw new Error('Datos de inventario no válidos');
     res.json(result.rows);
   } catch (error) {
     console.error('Error al obtener inventario:', error);
@@ -101,20 +93,16 @@ app.get('/api/inventario', async (req, res) => {
   }
 });
 
-// PUT - Editar artículo
 app.put('/api/inventario/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia, codigobarras } = req.body;
-
     const query = `
       UPDATE inventario SET nombre=$1, proveedor=$2, cantidad=$3, precio=$4, fecha=$5, vidautil=$6, ubicacion=$7, estado=$8, familia=$9, codigobarras=$10
-      WHERE id=$11
-      RETURNING *;
+      WHERE id=$11 RETURNING *;
     `;
     const values = [nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia || null, codigobarras || null, id];
     const result = await pool.query(query, values);
-
     res.json({ message: 'Artículo actualizado correctamente', item: result.rows[0] });
   } catch (error) {
     console.error('Error al actualizar artículo:', error);
@@ -122,7 +110,6 @@ app.put('/api/inventario/:id', async (req, res) => {
   }
 });
 
-// DELETE - Eliminar artículo
 app.delete('/api/inventario/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -136,11 +123,9 @@ app.delete('/api/inventario/:id', async (req, res) => {
 
 // ------------------ MANTENIMIENTO ------------------ //
 
-// GET - Listar mantenimientos
 app.get('/api/mantenimiento', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM mantenimiento ORDER BY fecha DESC');
-    if (!Array.isArray(result.rows)) throw new Error('Datos de mantenimiento no válidos');
     res.json(result.rows);
   } catch (error) {
     console.error('Error al obtener mantenimiento:', error);
@@ -148,24 +133,36 @@ app.get('/api/mantenimiento', async (req, res) => {
   }
 });
 
-// POST - Guardar mantenimiento con foto
 app.post('/api/mantenimiento', upload.single('fotoman'), async (req, res) => {
   try {
     let { maquina, linea, fecha, tecnico, tiempo, sintomas, estadomotor, transmision, hidraulico, neumatico, electrico, observaciones, estadoaccion } = req.body;
-    const fotoman = req.file ? `/uploads/${req.file.filename}` : null;
 
-    // Transformar síntomas en array de PostgreSQL
     sintomas = Array.isArray(sintomas) && sintomas.length > 0
       ? `{${sintomas.map(s => `"${s}"`).join(',')}}`
       : '{}';
 
+    // Subir foto a Supabase Storage si existe
+    let fotoman = null;
+    if (req.file) {
+      const filename = `${Date.now()}_${req.file.originalname}`;
+      const { error } = await supabase.storage
+        .from('fotosmantenimiento')
+        .upload(filename, req.file.buffer, { contentType: req.file.mimetype });
+
+      if (error) throw new Error('Error al subir imagen: ' + error.message);
+
+      const { data } = supabase.storage
+        .from('fotosmantenimiento')
+        .getPublicUrl(filename);
+
+      fotoman = data.publicUrl;
+    }
+
     const query = `
       INSERT INTO mantenimiento (maquina, linea, fecha, tecnico, tiempo, sintomas, estadomotor, transmision, hidraulico, neumatico, electrico, observaciones, estadoaccion, fotoman)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
-      RETURNING *;
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *;
     `;
     const values = [maquina, linea, fecha, tecnico, tiempo, sintomas, estadomotor, transmision, hidraulico, neumatico, electrico, observaciones, estadoaccion, fotoman];
-
     const result = await pool.query(query, values);
     res.status(201).json({ message: 'Mantenimiento guardado correctamente', item: result.rows[0] });
   } catch (error) {
@@ -174,22 +171,39 @@ app.post('/api/mantenimiento', upload.single('fotoman'), async (req, res) => {
   }
 });
 
-// PUT - Editar mantenimiento
 app.put('/api/mantenimiento/:id', upload.single('fotoman'), async (req, res) => {
   try {
     const { id } = req.params;
     let { maquina, linea, fecha, tecnico, tiempo, sintomas, estadomotor, transmision, hidraulico, neumatico, electrico, observaciones, estadoaccion } = req.body;
-    const fotoman = req.file ? `/uploads/${req.file.filename}` : null;
 
     sintomas = Array.isArray(sintomas) && sintomas.length > 0
       ? `{${sintomas.map(s => `"${s}"`).join(',')}}`
       : '{}';
 
+    // Subir nueva foto a Supabase Storage si se proporcionó
+    let fotoman = null;
+    if (req.file) {
+      const filename = `${Date.now()}_${req.file.originalname}`;
+      const { error } = await supabase.storage
+        .from('fotosmantenimiento')
+        .upload(filename, req.file.buffer, { contentType: req.file.mimetype });
+
+      if (error) throw new Error('Error al subir imagen: ' + error.message);
+
+      const { data } = supabase.storage
+        .from('fotosmantenimiento')
+        .getPublicUrl(filename);
+
+      fotoman = data.publicUrl;
+    }
+
     const query = `
       UPDATE mantenimiento SET
-        maquina=$1, linea=$2, fecha=$3, tecnico=$4, tiempo=$5, sintomas=$6, estadomotor=$7, transmision=$8, hidraulico=$9, neumatico=$10, electrico=$11, observaciones=$12, estadoaccion=$13${fotoman ? ', fotoman=$14' : ''}
-      WHERE id=$${fotoman ? 15 : 14}
-      RETURNING *;
+        maquina=$1, linea=$2, fecha=$3, tecnico=$4, tiempo=$5, sintomas=$6,
+        estadomotor=$7, transmision=$8, hidraulico=$9, neumatico=$10,
+        electrico=$11, observaciones=$12, estadoaccion=$13
+        ${fotoman ? ', fotoman=$14' : ''}
+      WHERE id=$${fotoman ? 15 : 14} RETURNING *;
     `;
     const values = fotoman
       ? [maquina, linea, fecha, tecnico, tiempo, sintomas, estadomotor, transmision, hidraulico, neumatico, electrico, observaciones, estadoaccion, fotoman, id]
@@ -203,7 +217,6 @@ app.put('/api/mantenimiento/:id', upload.single('fotoman'), async (req, res) => 
   }
 });
 
-// DELETE - Eliminar mantenimiento
 app.delete('/api/mantenimiento/:id', async (req, res) => {
   try {
     const { id } = req.params;
