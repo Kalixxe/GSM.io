@@ -3,3 +3,6 @@ buildCommand = "npm install"
 
 [deploy]
 startCommand = "node index.js"
+
+[staticFiles]
+enabled = false
