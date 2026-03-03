@@ -37,6 +37,32 @@ process.on('unhandledRejection', (err) => {
 });
 // ---------------------------------
 
+// ------------------ LOGIN ------------------ //
+
+// Usuarios definidos en el servidor (no visibles desde el navegador)
+const users = {
+  "admin":  { password: "Ca2025",     role: "admin"  },
+  "user1":  { password: "Global26", role: "viewer" },
+  "Tec1":  { password: "Mat26", role: "viewer" }
+};
+
+// POST - Login
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Usuario y contraseña son obligatorios' });
+  }
+
+  const user = users[username];
+
+  if (user && user.password === password) {
+    res.json({ success: true, role: user.role, user: username });
+  } else {
+    res.status(401).json({ error: 'Credenciales incorrectas' });
+  }
+});
+
 // ------------------ INVENTARIO ------------------ //
 
 // POST - Crear artículo
