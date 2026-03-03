@@ -280,7 +280,7 @@
 
     function verFoto(url) {
       if (!url) return;
-      document.getElementById("imagenGrande").src = `${API_BASE}${url}`;
+      document.getElementById("imagenGrande").src = url;
       document.getElementById("modalFoto").classList.remove("hidden");
     }
 
