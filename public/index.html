@@ -41,19 +41,8 @@
             flex-direction: column;
             align-items: stretch;
         }
-        #login-error {
-            display: none;
-            color: red;
-            font-size: 0.875rem;
-            margin-top: 0.5rem;
-        }
-        .footer {
-            color: white;
-            font-size: 0.75rem;
-            text-align: center;
-            padding-top: 1rem;
-            order: 3;
-        }
+        #login-error { display: none; color: red; font-size: 0.875rem; margin-top: 0.5rem; }
+        .footer { color: white; font-size: 0.75rem; text-align: center; padding-top: 1rem; order: 3; }
         .footer a { color: white; text-decoration: underline; }
         form { width: 100%; }
     </style>
@@ -71,61 +60,35 @@
                 <label for="password" class="block text-gray-600 text-sm font-bold mb-2">Contraseña:</label>
                 <input type="password" id="password" name="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
             </div>
-            <button type="submit" id="btnLogin" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full">
-                Iniciar Sesión
-            </button>
+            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Iniciar Sesión</button>
             <div id="login-error" class="text-red-500 text-sm italic" style="display: none;"></div>
         </form>
     </div>
-
     <footer class="footer">
         <p>© 2025 GEOWAY, Technology-Based initiative - IBT. All rights reserved. Berlin - Germany <a href="https://geo-way.github.io/GeoWay.io/index.html">GEOWAY</a></p>
     </footer>
 
 <script>
-    const API_BASE = "https://gsmio-production-3b4c.up.railway.app";
+    const users = {
+        "admin": { password: "Ca2025", role: "admin" },
+        "user1": { password: "Global2025", role: "viewer" }
+    };
 
-    document.getElementById("form-login").addEventListener("submit", async function(event) {
+    document.getElementById("form-login").addEventListener("submit", function(event) {
         event.preventDefault();
-
         const username = document.getElementById("username").value.trim();
         const password = document.getElementById("password").value.trim();
-        const btnLogin = document.getElementById("btnLogin");
-        const errorDiv = document.getElementById("login-error");
-
-        // Deshabilitar botón mientras espera respuesta
-        btnLogin.disabled = true;
-        btnLogin.textContent = "Verificando...";
-        errorDiv.style.display = "none";
-
-        try {
-            const res = await fetch(`${API_BASE}/api/login`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password })
-            });
-
-            const data = await res.json();
-
-            if (res.ok && data.success) {
-                localStorage.setItem('loggedIn', 'true');
-                localStorage.setItem('user', data.user);
-                localStorage.setItem('role', data.role);
-                window.location.href = "inventario.html";
-            } else {
-                errorDiv.textContent = data.error || "Credenciales incorrectas. Por favor, inténtelo de nuevo.";
-                errorDiv.style.display = "block";
-            }
-        } catch (err) {
-            errorDiv.textContent = "Error de conexión con el servidor. Inténtelo de nuevo.";
-            errorDiv.style.display = "block";
-            console.error("Error en login:", err);
-        } finally {
-            btnLogin.disabled = false;
-            btnLogin.textContent = "Iniciar Sesión";
+        const user = users[username];
+        if (user && user.password === password) {
+            localStorage.setItem('loggedIn', 'true');
+            localStorage.setItem('user', username);
+            localStorage.setItem('role', user.role);
+            window.location.href = "inventario.html";
+        } else {
+            document.getElementById("login-error").textContent = "Credenciales incorrectas. Por favor, inténtelo de nuevo.";
+            document.getElementById("login-error").style.display = "block";
         }
     });
 </script>
-
 </body>
 </html>
