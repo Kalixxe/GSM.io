@@ -44,8 +44,7 @@ process.on('unhandledRejection', (err) => {
 
 const users = {
   "admin": { password: "Ca2025",     role: "admin"  },
-  "user1": { password: "Global26", role: "viewer" },
-  "Tec1": { password: "Mat26",     role: "viewer"  }
+  "user1": { password: "Global2025", role: "viewer" }
 };
 
 app.post('/api/login', (req, res) => {
@@ -140,20 +139,16 @@ app.post('/api/mantenimiento', upload.single('fotoman'), async (req, res) => {
       ? `{${sintomas.map(s => `"${s}"`).join(',')}}`
       : '{}';
 
-    // Subir foto a Supabase Storage si existe
     let fotoman = null;
     if (req.file) {
       const filename = `${Date.now()}_${req.file.originalname}`;
       const { error } = await supabase.storage
         .from('fotosmantenimiento')
         .upload(filename, req.file.buffer, { contentType: req.file.mimetype });
-
       if (error) throw new Error('Error al subir imagen: ' + error.message);
-
       const { data } = supabase.storage
         .from('fotosmantenimiento')
         .getPublicUrl(filename);
-
       fotoman = data.publicUrl;
     }
 
@@ -179,20 +174,16 @@ app.put('/api/mantenimiento/:id', upload.single('fotoman'), async (req, res) => 
       ? `{${sintomas.map(s => `"${s}"`).join(',')}}`
       : '{}';
 
-    // Subir nueva foto a Supabase Storage si se proporcionó
     let fotoman = null;
     if (req.file) {
       const filename = `${Date.now()}_${req.file.originalname}`;
       const { error } = await supabase.storage
         .from('fotosmantenimiento')
         .upload(filename, req.file.buffer, { contentType: req.file.mimetype });
-
       if (error) throw new Error('Error al subir imagen: ' + error.message);
-
       const { data } = supabase.storage
         .from('fotosmantenimiento')
         .getPublicUrl(filename);
-
       fotoman = data.publicUrl;
     }
 
@@ -226,9 +217,10 @@ app.delete('/api/mantenimiento/:id', async (req, res) => {
     res.status(500).json({ error: 'Error al eliminar mantenimiento', detalle: error.message });
   }
 });
-// Servir archivos estáticos DESPUÉS de las rutas API
 
-app.use(express.static('public'));
+// ------------------ ARCHIVOS ESTÁTICOS (siempre al final) ------------------ //
+// IMPORTANTE: debe ir después de todas las rutas /api para que no las intercepte
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ------------------ FIN ------------------ //
 app.listen(port, () => {
