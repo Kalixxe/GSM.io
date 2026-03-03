@@ -132,4 +132,58 @@ app.post('/api/mantenimiento', upload.single('fotoman'), async (req, res) => {
 app.put('/api/mantenimiento/:id', upload.single('fotoman'), async (req, res) => {
   try {
     const { id } = req.params;
-    let { maquina, linea, fecha, tecnico, tiempo, sintomas, estadomotor, transmision, hidraulico, neumatico, electrico, observ
+    let { maquina, linea, fecha, tecnico, tiempo, sintomas, estadomotor, transmision, hidraulico, neumatico, electrico, observaciones, estadoaccion } = req.body;
+
+    sintomas = Array.isArray(sintomas) && sintomas.length > 0
+      ? `{${sintomas.map(s => `"${s}"`).join(',')}}`
+      : '{}';
+
+    let fotoman = null;
+    if (req.file) {
+      const filename = `${Date.now()}_${req.file.originalname}`;
+      const { error } = await supabase.storage
+        .from('fotosmantenimiento')
+        .upload(filename, req.file.buffer, { contentType: req.file.mimetype });
+      if (error) throw new Error('Error al subir imagen: ' + error.message);
+      const { data } = supabase.storage.from('fotosmantenimiento').getPublicUrl(filename);
+      fotoman = data.publicUrl;
+    }
+
+    const query = `
+      UPDATE mantenimiento SET
+        maquina=$1, linea=$2, fecha=$3, tecnico=$4, tiempo=$5, sintomas=$6,
+        estadomotor=$7, transmision=$8, hidraulico=$9, neumatico=$10,
+        electrico=$11, observaciones=$12, estadoaccion=$13
+        ${fotoman ? ', fotoman=$14' : ''}
+      WHERE id=$${fotoman ? 15 : 14} RETURNING *;
+    `;
+    const values = fotoman
+      ? [maquina, linea, fecha, tecnico, tiempo, sintomas, estadomotor, transmision, hidraulico, neumatico, electrico, observaciones, estadoaccion, fotoman, id]
+      : [maquina, linea, fecha, tecnico, tiempo, sintomas, estadomotor, transmision, hidraulico, neumatico, electrico, observaciones, estadoaccion, id];
+
+    const result = await pool.query(query, values);
+    res.json({ message: 'Mantenimiento actualizado correctamente', item: result.rows[0] });
+  } catch (error) {
+    console.error('Error al actualizar mantenimiento:', error);
+    res.status(500).json({ error: 'Error al actualizar mantenimiento', detalle: error.message });
+  }
+});
+
+app.delete('/api/mantenimiento/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM mantenimiento WHERE id=$1', [id]);
+    res.json({ message: 'Mantenimiento eliminado correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar mantenimiento:', error);
+    res.status(500).json({ error: 'Error al eliminar mantenimiento', detalle: error.message });
+  }
+});
+
+// ------------------ ARCHIVOS ESTÁTICOS ------------------ //
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ------------------ FIN ------------------ //
+app.listen(port, () => {
+  console.log(`Servidor corriendo en el puerto ${port}`);
+});
