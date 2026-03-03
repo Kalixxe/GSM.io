@@ -15,7 +15,6 @@ const port = process.env.PORT || 8080;
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static('public'));
 
 // Multer — almacenamiento en memoria (no en disco)
 const upload = multer({ storage: multer.memoryStorage() });
@@ -227,7 +226,8 @@ app.delete('/api/mantenimiento/:id', async (req, res) => {
     res.status(500).json({ error: 'Error al eliminar mantenimiento', detalle: error.message });
   }
 });
-
+// Servir archivos estáticos DESPUÉS de las rutas API
+app.use(express.static('public'));
 // ------------------ FIN ------------------ //
 app.listen(port, () => {
   console.log(`Servidor corriendo en el puerto ${port}`);
