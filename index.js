@@ -22,11 +22,7 @@ const upload = multer({ dest: 'uploads/' });
 
 // Conexión a PostgreSQL
 const pool = new Pool({
-  host: 'aws-1-eu-west-3.pooler.supabase.com',
-  port: 6543,
-  database: 'postgres',
-  user: 'postgres.hxmdmnwxfjgxkpbzyxnm',
-  password: process.env.DB_PASSWORD,
+  connectionString: 'postgresql://postgres.hxmdmnwxfjgxkpbzyxnm:[4Ubhrh9S8spV3Fnh]@aws-1-eu-west-3.pooler.supabase.com:6543/postgres',
   ssl: { rejectUnauthorized: false }
 });
 
