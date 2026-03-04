@@ -272,10 +272,206 @@ app.delete('/api/documentos/:id', async (req, res) => {
   }
 });
 
+
+
+// ------------------ HOJAS DE MANTENIMIENTO ------------------ //
+
+app.get('/api/hojas_mantenimiento', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM hojas_mantenimiento ORDER BY fecha_ejecucion DESC');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error al obtener hojas:', error);
+    res.status(500).json({ error: 'Error al obtener hojas', detalle: error.message });
+  }
+});
+
+app.get('/api/hojas_mantenimiento/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('SELECT * FROM hojas_mantenimiento WHERE id=$1', [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Hoja no encontrada' });
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error al obtener hoja:', error);
+    res.status(500).json({ error: 'Error al obtener hoja', detalle: error.message });
+  }
+});
+
+app.post('/api/hojas_mantenimiento', async (req, res) => {
+  try {
+    const {
+      nombre_maquina, modelo, fabricante, area, ubicacion, responsable,
+      frecuencia, mes_anio, tipo_mantenimiento, fecha_ejecucion,
+      hora_inicio, hora_fin, tecnico, verificacion, trabajos_realizados,
+      repuestos, observaciones, firma_tecnico, firma_supervisor, fecha_firma
+    } = req.body;
+
+    if (!nombre_maquina || !fecha_ejecucion || !tecnico) {
+      return res.status(400).json({ error: 'Faltan campos obligatorios' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO hojas_mantenimiento (
+        nombre_maquina, modelo, fabricante, area, ubicacion, responsable,
+        frecuencia, mes_anio, tipo_mantenimiento, fecha_ejecucion,
+        hora_inicio, hora_fin, tecnico, verificacion, trabajos_realizados,
+        repuestos, observaciones, firma_tecnico, firma_supervisor, fecha_firma
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+      RETURNING *;`,
+      [
+        nombre_maquina, modelo, fabricante, area, ubicacion, responsable,
+        frecuencia, mes_anio, tipo_mantenimiento, fecha_ejecucion,
+        hora_inicio, hora_fin, tecnico, verificacion, trabajos_realizados,
+        repuestos, observaciones, firma_tecnico, firma_supervisor, fecha_firma
+      ]
+    );
+    res.status(201).json({ message: 'Hoja guardada correctamente', item: result.rows[0] });
+  } catch (error) {
+    console.error('Error al guardar hoja:', error);
+    res.status(500).json({ error: 'Error al guardar hoja', detalle: error.message });
+  }
+});
+
+app.delete('/api/hojas_mantenimiento/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM hojas_mantenimiento WHERE id=$1', [id]);
+    res.json({ message: 'Hoja eliminada correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar hoja:', error);
+    res.status(500).json({ error: 'Error al eliminar hoja', detalle: error.message });
+  }
+});
+
+// ------------------ HOJAS DE MANTENIMIENTO ------------------ //
+
+app.get('/api/hojas_mantenimiento', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM hojas_mantenimiento ORDER BY fecha_ejecucion DESC NULLS LAST, created_at DESC');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error al obtener hojas:', error);
+    res.status(500).json({ error: 'Error al obtener hojas', detalle: error.message });
+  }
+});
+
+app.get('/api/hojas_mantenimiento/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('SELECT * FROM hojas_mantenimiento WHERE id=$1', [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Hoja no encontrada' });
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error al obtener hoja:', error);
+    res.status(500).json({ error: 'Error al obtener hoja', detalle: error.message });
+  }
+});
+
+app.post('/api/hojas_mantenimiento', async (req, res) => {
+  try {
+    const {
+      maquina, nombre_maquina, modelo, fabricante, area, ubicacion, responsable,
+      frecuencia, mes_anio, tipo_mantenimiento, fecha_ejecucion,
+      hora_inicio, hora_fin, tecnico, verificacion, trabajos_realizados,
+      repuestos, observaciones, apta_operacion, firma_tecnico, firma_supervisor,
+      fecha_firma, piezasRequeridas
+    } = req.body;
+
+    if (!maquina || !fecha_ejecucion || !tecnico) {
+      return res.status(400).json({ error: 'Faltan campos obligatorios' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO hojas_mantenimiento (
+        maquina, nombre_maquina, modelo, fabricante, area, ubicacion, responsable,
+        frecuencia, mes_anio, tipo_mantenimiento, fecha_ejecucion,
+        hora_inicio, hora_fin, tecnico, verificacion, trabajos_realizados,
+        repuestos, observaciones, apta_operacion, firma_tecnico, firma_supervisor, fecha_firma
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
+      RETURNING *;`,
+      [
+        maquina, nombre_maquina, modelo, fabricante, area, ubicacion, responsable,
+        frecuencia, mes_anio, tipo_mantenimiento, fecha_ejecucion,
+        hora_inicio, hora_fin, tecnico, verificacion, trabajos_realizados,
+        repuestos, observaciones, apta_operacion, firma_tecnico, firma_supervisor, fecha_firma
+      ]
+    );
+
+    const hojaId = result.rows[0].id;
+
+    // Crear órdenes de compra automáticas por cada pieza con ✗
+    if (piezasRequeridas && piezasRequeridas.length > 0) {
+      for (const p of piezasRequeridas) {
+        await pool.query(
+          `INSERT INTO ordenes_compra (hoja_id, maquina, tecnico, pieza, cantidad, item_origen)
+           VALUES ($1,$2,$3,$4,$5,$6);`,
+          [hojaId, nombre_maquina, tecnico, p.pieza, p.cantidad, p.item]
+        );
+      }
+    }
+
+    res.status(201).json({ message: 'Hoja guardada correctamente', item: result.rows[0], ordenes: piezasRequeridas?.length || 0 });
+  } catch (error) {
+    console.error('Error al guardar hoja:', error);
+    res.status(500).json({ error: 'Error al guardar hoja', detalle: error.message });
+  }
+});
+
+app.delete('/api/hojas_mantenimiento/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM hojas_mantenimiento WHERE id=$1', [id]);
+    res.json({ message: 'Hoja eliminada correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar hoja:', error);
+    res.status(500).json({ error: 'Error al eliminar hoja', detalle: error.message });
+  }
+});
+
+// ------------------ ÓRDENES DE COMPRA ------------------ //
+
+app.get('/api/ordenes_compra', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM ordenes_compra ORDER BY created_at DESC');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error al obtener órdenes:', error);
+    res.status(500).json({ error: 'Error al obtener órdenes', detalle: error.message });
+  }
+});
+
+app.put('/api/ordenes_compra/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { estado, observacion } = req.body;
+    const result = await pool.query(
+      `UPDATE ordenes_compra SET estado=$1, observacion=$2 WHERE id=$3 RETURNING *;`,
+      [estado, observacion, id]
+    );
+    res.json({ message: 'Orden actualizada correctamente', item: result.rows[0] });
+  } catch (error) {
+    console.error('Error al actualizar orden:', error);
+    res.status(500).json({ error: 'Error al actualizar orden', detalle: error.message });
+  }
+});
+
+app.delete('/api/ordenes_compra/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM ordenes_compra WHERE id=$1', [id]);
+    res.json({ message: 'Orden eliminada correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar orden:', error);
+    res.status(500).json({ error: 'Error al eliminar orden', detalle: error.message });
+  }
+});
+
+
 // ------------------ ARCHIVOS ESTÁTICOS ------------------ //
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ------------------ FIN ------------------ //
 app.listen(port, () => {
-  console.log(`Servidor corriendo en el puerto ${port}`);
+  console.log('Servidor corriendo en el puerto ' + port);
 });
