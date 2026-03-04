@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Seguridad</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    const rolUsuario = localStorage.getItem("role") || "viewer";
+    if (!localStorage.getItem("loggedIn")) {
+      alert("Debes iniciar sesión para acceder.");
+      window.location.href = "index.html";
+    }
+  </script>
+  <style>
+    body { font-family: sans-serif; }
+    @media print {
+      @page { size: landscape; }
+      header, nav, button { display: none !important; }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-900">
+
+  <!-- HEADER -->
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="index.html" class="flex items-center space-x-2">
+        <img src="https://images.squarespace-cdn.com/content/v1/58a36221d482e9bca4af6eac/34694fc3-6f92-4054-8a58-3776436c00dc/IMG_9869+2.PNG?format=2500w" alt="Logo" class="h-10 w-auto" />
+        <span class="text-xl font-bold text-red-600">SIMio</span>
+        <span class="text-sm text-gray-500 italic ml-4">(Rol: <span id="nombreRol">...</span>)</span>
+      </a>
+      <nav class="hidden md:flex space-x-6 text-sm font-medium">
+        <a href="index.html" class="text-gray-700 hover:text-red-600">Home</a>
+        <a href="inventario.html" class="text-gray-700 hover:text-red-600">Inventario</a>
+        <a href="mantenimiento.html" class="text-gray-700 hover:text-red-600">Mantenimiento</a>
+        <a href="maquinas.html" class="text-gray-700 hover:text-red-600">Diagrama de Máquinas</a>
+        <a href="seguridad.html" class="text-red-600 font-bold">Seguridad</a>
+        <a href="info.html" class="text-gray-500 hover:text-red-600">ℹ️</a>
+      </nav>
+      <button id="menuToggle" class="md:hidden text-gray-700">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+    <div id="mobileMenu" class="md:hidden hidden px-4 pb-4">
+      <a href="index.html" class="block py-2 text-gray-700 hover:text-red-600">Home</a>
+      <a href="inventario.html" class="block py-2 text-gray-700 hover:text-red-600">Inventario</a>
+      <a href="mantenimiento.html" class="block py-2 text-gray-700 hover:text-red-600">Mantenimiento</a>
+      <a href="maquinas.html" class="block py-2 text-gray-700 hover:text-red-600">Diagrama de Máquinas</a>
+      <a href="seguridad.html" class="block py-2 text-red-600 font-bold">Seguridad</a>
+      <a href="info.html" class="block py-2 text-gray-700 hover:text-red-600">ℹ️</a>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto mt-10 p-4">
+
+    <!-- Formulario nueva máquina (solo admin) -->
+    <div id="seccionFormMaquina" class="hidden">
+      <h2 class="text-lg font-semibold text-gray-700 mb-4">➕ Registrar Nueva Máquina</h2>
+      <form id="formMaquina" class="grid md:grid-cols-2 gap-4 bg-white p-6 rounded shadow mb-8">
+        <input class="p-2 border rounded" name="nombre" placeholder="Nombre de la máquina *" required />
+        <input class="p-2 border rounded" name="linea" placeholder="Línea (ej: T1, T2)" />
+        <textarea class="p-2 border rounded col-span-full" name="descripcion" placeholder="Descripción general de la máquina" rows="2"></textarea>
+        <textarea class="p-2 border rounded col-span-full" name="advertencias" placeholder="⚠️ Advertencias de uso y seguridad" rows="3"></textarea>
+        <button type="submit" class="col-span-full bg-red-600 text-white p-2 rounded hover:bg-red-700">
+          Guardar Máquina
+        </button>
+      </form>
+    </div>
+
+    <!-- Lista de máquinas -->
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xl font-semibold text-gray-700">🏭 Máquinas y Documentos de Seguridad</h2>
+      <input id="filtroMaquina" placeholder="🔍 Buscar máquina..." class="p-2 border rounded text-sm w-64" />
+    </div>
+
+    <div id="listaMaquinas" class="space-y-6">
+      <p class="text-gray-500 text-center py-10">Cargando máquinas...</p>
+    </div>
+
+  </main>
+
+  <!-- Modal subir PDF -->
+  <div id="modalPDF" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+      <h3 class="text-lg font-semibold mb-4">📄 Subir Documento de Seguridad</h3>
+      <form id="formDocumento" class="space-y-4">
+        <input type="hidden" id="maquinaIdDoc" />
+        <input class="p-2 border rounded w-full" id="tituloDoc" placeholder="Título del documento *" required />
+        <select class="p-2 border rounded w-full" id="tipoDoc">
+          <option value="analisis_riesgo">Análisis de Riesgo</option>
+          <option value="advertencia">Advertencia de Uso</option>
+          <option value="manual">Manual</option>
+          <option value="otro">Otro</option>
+        </select>
+        <input type="file" id="archivoDoc" accept=".pdf" class="p-2 border rounded w-full" required />
+        <div class="flex gap-2 justify-end">
+          <button type="button" onclick="cerrarModalPDF()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">Cancelar</button>
+          <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Subir</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal editar máquina -->
+  <div id="modalEditarMaquina" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+      <h3 class="text-lg font-semibold mb-4">✏️ Editar Máquina</h3>
+      <form id="formEditarMaquina" class="space-y-4">
+        <input type="hidden" id="editarMaquinaId" />
+        <input class="p-2 border rounded w-full" id="editarNombre" placeholder="Nombre *" required />
+        <input class="p-2 border rounded w-full" id="editarLinea" placeholder="Línea" />
+        <textarea class="p-2 border rounded w-full" id="editarDescripcion" placeholder="Descripción" rows="2"></textarea>
+        <textarea class="p-2 border rounded w-full" id="editarAdvertencias" placeholder="⚠️ Advertencias" rows="3"></textarea>
+        <div class="flex gap-2 justify-end">
+          <button type="button" onclick="cerrarModalEditarMaquina()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">Cancelar</button>
+          <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-600 text-gray-200 text-center py-6 mt-10 text-sm">
+    <div class="max-w-4xl mx-auto px-4 flex flex-col items-center space-y-2">
+      <p>© 2025 <strong>GEOWAY</strong>, Technology-Based Initiative – IBT. All rights reserved.</p>
+      <a href="https://geo-way.github.io/GeoWay.io/index.html" target="_blank" class="hover:opacity-80 transition-opacity">
+        <img src="https://geo-way.github.io/GeoWay.io/images/Logo5.png" alt="GEOWAY Logo" class="h-8 invert">
+      </a>
+    </div>
+  </footer>
+
+  <script>
+    const API_BASE = "https://gsmio-production-3b4c.up.railway.app";
+    let datosMaquinas = [];
+
+    document.getElementById("nombreRol").innerText = rolUsuario;
+
+    // Mostrar formulario solo a admin
+    if (rolUsuario === "admin") {
+      document.getElementById("seccionFormMaquina").classList.remove("hidden");
+    }
+
+    // Menú móvil
+    document.getElementById("menuToggle").addEventListener("click", () => {
+      document.getElementById("mobileMenu").classList.toggle("hidden");
+    });
+
+    // Cargar máquinas
+    async function cargarMaquinas() {
+      try {
+        const res = await fetch(`${API_BASE}/api/maquinas`);
+        if (!res.ok) throw new Error("Error al cargar máquinas");
+        datosMaquinas = await res.json();
+        renderMaquinas(datosMaquinas);
+      } catch (err) {
+        document.getElementById("listaMaquinas").innerHTML = `<p class="text-red-500 text-center">Error al cargar máquinas: ${err.message}</p>`;
+      }
+    }
+
+    function renderMaquinas(maquinas) {
+      const contenedor = document.getElementById("listaMaquinas");
+      if (maquinas.length === 0) {
+        contenedor.innerHTML = `<p class="text-gray-500 text-center py-10">No hay máquinas registradas aún.</p>`;
+        return;
+      }
+      contenedor.innerHTML = maquinas.map(m => `
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <h3 class="text-lg font-bold text-red-600">${m.nombre}</h3>
+              ${m.linea ? `<span class="text-sm text-gray-500">Línea: ${m.linea}</span>` : ""}
+            </div>
+            ${rolUsuario === "admin" ? `
+            <div class="flex gap-2">
+              <button onclick="abrirModalEditarMaquina(${m.id})" class="text-yellow-600 hover:scale-110 transition text-xl">✏️</button>
+              <button onclick="eliminarMaquina(${m.id})" class="text-red-600 hover:scale-110 transition text-xl">🗑️</button>
+            </div>` : ""}
+          </div>
+
+          ${m.descripcion ? `<p class="text-gray-700 mb-3">${m.descripcion}</p>` : ""}
+
+          ${m.advertencias ? `
+          <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4 rounded">
+            <p class="text-sm font-semibold text-yellow-800">⚠️ Advertencias de uso:</p>
+            <p class="text-sm text-yellow-700 mt-1">${m.advertencias}</p>
+          </div>` : ""}
+
+          <!-- Documentos -->
+          <div class="mt-4">
+            <div class="flex items-center justify-between mb-2">
+              <h4 class="font-semibold text-gray-700">📄 Documentos de Seguridad</h4>
+              ${rolUsuario === "admin" ? `
+              <button onclick="abrirModalPDF(${m.id})" class="bg-red-600 hover:bg-red-700 text-white text-sm px-3 py-1 rounded">
+                + Subir PDF
+              </button>` : ""}
+            </div>
+            <div id="docs-${m.id}" class="space-y-2">
+              <p class="text-gray-400 text-sm">Cargando documentos...</p>
+            </div>
+          </div>
+        </div>
+      `).join("");
+
+      // Cargar documentos de cada máquina
+      maquinas.forEach(m => cargarDocumentos(m.id));
+    }
+
+    async function cargarDocumentos(maquinaId) {
+      try {
+        const res = await fetch(`${API_BASE}/api/maquinas/${maquinaId}/documentos`);
+        const docs = await res.json();
+        const contenedor = document.getElementById(`docs-${maquinaId}`);
+        if (!docs || docs.length === 0) {
+          contenedor.innerHTML = `<p class="text-gray-400 text-sm">Sin documentos subidos.</p>`;
+          return;
+        }
+        const tipoLabel = { analisis_riesgo: "Análisis de Riesgo", advertencia: "Advertencia", manual: "Manual", otro: "Otro" };
+        contenedor.innerHTML = docs.map(d => `
+          <div class="flex items-center justify-between bg-gray-50 p-2 rounded border">
+            <div class="flex items-center gap-2">
+              <span class="text-red-500">📄</span>
+              <div>
+                <p class="text-sm font-medium">${d.titulo}</p>
+                <p class="text-xs text-gray-500">${tipoLabel[d.tipo] || d.tipo}</p>
+              </div>
+            </div>
+            <div class="flex gap-2 items-center">
+              <a href="${d.url}" target="_blank" class="text-blue-600 hover:underline text-sm">Ver PDF</a>
+              ${rolUsuario === "admin" ? `<button onclick="eliminarDocumento(${d.id}, ${maquinaId})" class="text-red-500 hover:text-red-700 text-sm">🗑️</button>` : ""}
+            </div>
+          </div>
+        `).join("");
+      } catch (err) {
+        document.getElementById(`docs-${maquinaId}`).innerHTML = `<p class="text-red-400 text-sm">Error al cargar documentos.</p>`;
+      }
+    }
+
+    // Filtro de búsqueda
+    document.getElementById("filtroMaquina").addEventListener("input", function() {
+      const q = this.value.toLowerCase();
+      const filtradas = datosMaquinas.filter(m =>
+        m.nombre.toLowerCase().includes(q) || (m.linea || "").toLowerCase().includes(q)
+      );
+      renderMaquinas(filtradas);
+    });
+
+    // Formulario nueva máquina
+    document.getElementById("formMaquina").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const form = e.target;
+      const datos = {
+        nombre: form.nombre.value.trim(),
+        linea: form.linea.value.trim() || null,
+        descripcion: form.descripcion.value.trim() || null,
+        advertencias: form.advertencias.value.trim() || null
+      };
+      try {
+        const res = await fetch(`${API_BASE}/api/maquinas`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(datos)
+        });
+        if (!res.ok) throw new Error(await res.text());
+        alert("✅ Máquina registrada correctamente.");
+        form.reset();
+        cargarMaquinas();
+      } catch (err) {
+        alert("❌ Error al guardar máquina: " + err.message);
+      }
+    });
+
+    // Eliminar máquina
+    async function eliminarMaquina(id) {
+      if (!confirm("¿Eliminar esta máquina y todos sus documentos?")) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/maquinas/${id}`, { method: "DELETE" });
+        if (!res.ok) throw new Error(await res.text());
+        alert("✅ Máquina eliminada.");
+        cargarMaquinas();
+      } catch (err) {
+        alert("❌ Error al eliminar: " + err.message);
+      }
+    }
+
+    // Modal editar máquina
+    function abrirModalEditarMaquina(id) {
+      const m = datosMaquinas.find(m => m.id === id);
+      if (!m) return;
+      document.getElementById("editarMaquinaId").value = m.id;
+      document.getElementById("editarNombre").value = m.nombre || "";
+      document.getElementById("editarLinea").value = m.linea || "";
+      document.getElementById("editarDescripcion").value = m.descripcion || "";
+      document.getElementById("editarAdvertencias").value = m.advertencias || "";
+      document.getElementById("modalEditarMaquina").classList.remove("hidden");
+    }
+
+    function cerrarModalEditarMaquina() {
+      document.getElementById("modalEditarMaquina").classList.add("hidden");
+    }
+
+    document.getElementById("formEditarMaquina").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const id = document.getElementById("editarMaquinaId").value;
+      const datos = {
+        nombre: document.getElementById("editarNombre").value.trim(),
+        linea: document.getElementById("editarLinea").value.trim() || null,
+        descripcion: document.getElementById("editarDescripcion").value.trim() || null,
+        advertencias: document.getElementById("editarAdvertencias").value.trim() || null
+      };
+      try {
+        const res = await fetch(`${API_BASE}/api/maquinas/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(datos)
+        });
+        if (!res.ok) throw new Error(await res.text());
+        alert("✅ Máquina actualizada.");
+        cerrarModalEditarMaquina();
+        cargarMaquinas();
+      } catch (err) {
+        alert("❌ Error al actualizar: " + err.message);
+      }
+    });
+
+    // Modal subir PDF
+    function abrirModalPDF(maquinaId) {
+      document.getElementById("maquinaIdDoc").value = maquinaId;
+      document.getElementById("formDocumento").reset();
+      document.getElementById("maquinaIdDoc").value = maquinaId;
+      document.getElementById("modalPDF").classList.remove("hidden");
+    }
+
+    function cerrarModalPDF() {
+      document.getElementById("modalPDF").classList.add("hidden");
+    }
+
+    document.getElementById("formDocumento").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const maquinaId = document.getElementById("maquinaIdDoc").value;
+      const titulo = document.getElementById("tituloDoc").value.trim();
+      const tipo = document.getElementById("tipoDoc").value;
+      const archivo = document.getElementById("archivoDoc").files[0];
+
+      if (!archivo) { alert("Selecciona un archivo PDF"); return; }
+
+      const formData = new FormData();
+      formData.append("titulo", titulo);
+      formData.append("tipo", tipo);
+      formData.append("documento", archivo, archivo.name);
+
+      try {
+        const res = await fetch(`${API_BASE}/api/maquinas/${maquinaId}/documentos`, {
+          method: "POST",
+          body: formData
+        });
+        if (!res.ok) throw new Error(await res.text());
+        alert("✅ Documento subido correctamente.");
+        cerrarModalPDF();
+        cargarDocumentos(maquinaId);
+      } catch (err) {
+        alert("❌ Error al subir documento: " + err.message);
+      }
+    });
+
+    // Eliminar documento
+    async function eliminarDocumento(docId, maquinaId) {
+      if (!confirm("¿Eliminar este documento?")) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/documentos/${docId}`, { method: "DELETE" });
+        if (!res.ok) throw new Error(await res.text());
+        alert("✅ Documento eliminado.");
+        cargarDocumentos(maquinaId);
+      } catch (err) {
+        alert("❌ Error al eliminar: " + err.message);
+      }
+    }
+
+    window.onload = cargarMaquinas;
+  </script>
+</body>
+</html>
