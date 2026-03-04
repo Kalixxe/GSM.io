@@ -30,6 +30,16 @@ process.on('unhandledRejection', (err) => { console.error('Rechazo no manejado:'
 
 // ------------------ INVENTARIO ------------------ //
 
+app.get('/api/inventario', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM inventario ORDER BY fecha DESC');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error al obtener inventario:', error);
+    res.status(500).json({ error: 'Datos de inventario no válidos', detalle: error.message });
+  }
+});
+
 app.post('/api/inventario', async (req, res) => {
   try {
     const { nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia, codigobarras } = req.body;
@@ -45,16 +55,6 @@ app.post('/api/inventario', async (req, res) => {
   } catch (error) {
     console.error('Error al guardar artículo:', error);
     res.status(500).json({ error: 'Error al guardar artículo', detalle: error.message });
-  }
-});
-
-app.get('/api/inventario', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM inventario ORDER BY fecha DESC');
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Error al obtener inventario:', error);
-    res.status(500).json({ error: 'Datos de inventario no válidos', detalle: error.message });
   }
 });
 
@@ -175,7 +175,6 @@ app.get('/api/maquinas', async (req, res) => {
     const result = await pool.query('SELECT * FROM maquinas ORDER BY nombre ASC');
     res.json(result.rows);
   } catch (error) {
-    console.error('Error al obtener máquinas:', error);
     res.status(500).json({ error: 'Error al obtener máquinas', detalle: error.message });
   }
 });
@@ -190,7 +189,6 @@ app.post('/api/maquinas', async (req, res) => {
     );
     res.status(201).json({ message: 'Máquina registrada correctamente', item: result.rows[0] });
   } catch (error) {
-    console.error('Error al guardar máquina:', error);
     res.status(500).json({ error: 'Error al guardar máquina', detalle: error.message });
   }
 });
@@ -205,7 +203,6 @@ app.put('/api/maquinas/:id', async (req, res) => {
     );
     res.json({ message: 'Máquina actualizada correctamente', item: result.rows[0] });
   } catch (error) {
-    console.error('Error al actualizar máquina:', error);
     res.status(500).json({ error: 'Error al actualizar máquina', detalle: error.message });
   }
 });
@@ -216,7 +213,6 @@ app.delete('/api/maquinas/:id', async (req, res) => {
     await pool.query('DELETE FROM maquinas WHERE id=$1', [id]);
     res.json({ message: 'Máquina eliminada correctamente' });
   } catch (error) {
-    console.error('Error al eliminar máquina:', error);
     res.status(500).json({ error: 'Error al eliminar máquina', detalle: error.message });
   }
 });
@@ -231,7 +227,6 @@ app.get('/api/maquinas/:id/documentos', async (req, res) => {
     );
     res.json(result.rows);
   } catch (error) {
-    console.error('Error al obtener documentos:', error);
     res.status(500).json({ error: 'Error al obtener documentos', detalle: error.message });
   }
 });
@@ -241,22 +236,16 @@ app.post('/api/maquinas/:id/documentos', upload.single('documento'), async (req,
     const { id } = req.params;
     const { titulo, tipo } = req.body;
     if (!req.file) return res.status(400).json({ error: 'No se recibió ningún archivo' });
-
     const filename = `${Date.now()}_${req.file.originalname}`;
-    const { error } = await supabase.storage
-      .from('documentos-seguridad')
-      .upload(filename, req.file.buffer, { contentType: 'application/pdf' });
+    const { error } = await supabase.storage.from('documentos-seguridad').upload(filename, req.file.buffer, { contentType: 'application/pdf' });
     if (error) throw new Error('Error al subir PDF: ' + error.message);
-
     const { data } = supabase.storage.from('documentos-seguridad').getPublicUrl(filename);
-
     const result = await pool.query(
       `INSERT INTO documentos_seguridad (maquina_id, titulo, tipo, url) VALUES ($1,$2,$3,$4) RETURNING *;`,
       [id, titulo, tipo || 'analisis_riesgo', data.publicUrl]
     );
     res.status(201).json({ message: 'Documento subido correctamente', item: result.rows[0] });
   } catch (error) {
-    console.error('Error al subir documento:', error);
     res.status(500).json({ error: 'Error al subir documento', detalle: error.message });
   }
 });
@@ -267,21 +256,17 @@ app.delete('/api/documentos/:id', async (req, res) => {
     await pool.query('DELETE FROM documentos_seguridad WHERE id=$1', [id]);
     res.json({ message: 'Documento eliminado correctamente' });
   } catch (error) {
-    console.error('Error al eliminar documento:', error);
     res.status(500).json({ error: 'Error al eliminar documento', detalle: error.message });
   }
 });
 
-
-
 // ------------------ HOJAS DE MANTENIMIENTO ------------------ //
 
 app.get('/api/hojas_mantenimiento', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM hojas_mantenimiento ORDER BY fecha_ejecucion DESC');
+    const result = await pool.query('SELECT * FROM hojas_mantenimiento ORDER BY created_at DESC');
     res.json(result.rows);
   } catch (error) {
-    console.error('Error al obtener hojas:', error);
     res.status(500).json({ error: 'Error al obtener hojas', detalle: error.message });
   }
 });
@@ -293,77 +278,6 @@ app.get('/api/hojas_mantenimiento/:id', async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Hoja no encontrada' });
     res.json(result.rows[0]);
   } catch (error) {
-    console.error('Error al obtener hoja:', error);
-    res.status(500).json({ error: 'Error al obtener hoja', detalle: error.message });
-  }
-});
-
-app.post('/api/hojas_mantenimiento', async (req, res) => {
-  try {
-    const {
-      nombre_maquina, modelo, fabricante, area, ubicacion, responsable,
-      frecuencia, mes_anio, tipo_mantenimiento, fecha_ejecucion,
-      hora_inicio, hora_fin, tecnico, verificacion, trabajos_realizados,
-      repuestos, observaciones, firma_tecnico, firma_supervisor, fecha_firma
-    } = req.body;
-
-    if (!nombre_maquina || !fecha_ejecucion || !tecnico) {
-      return res.status(400).json({ error: 'Faltan campos obligatorios' });
-    }
-
-    const result = await pool.query(
-      `INSERT INTO hojas_mantenimiento (
-        nombre_maquina, modelo, fabricante, area, ubicacion, responsable,
-        frecuencia, mes_anio, tipo_mantenimiento, fecha_ejecucion,
-        hora_inicio, hora_fin, tecnico, verificacion, trabajos_realizados,
-        repuestos, observaciones, firma_tecnico, firma_supervisor, fecha_firma
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
-      RETURNING *;`,
-      [
-        nombre_maquina, modelo, fabricante, area, ubicacion, responsable,
-        frecuencia, mes_anio, tipo_mantenimiento, fecha_ejecucion,
-        hora_inicio, hora_fin, tecnico, verificacion, trabajos_realizados,
-        repuestos, observaciones, firma_tecnico, firma_supervisor, fecha_firma
-      ]
-    );
-    res.status(201).json({ message: 'Hoja guardada correctamente', item: result.rows[0] });
-  } catch (error) {
-    console.error('Error al guardar hoja:', error);
-    res.status(500).json({ error: 'Error al guardar hoja', detalle: error.message });
-  }
-});
-
-app.delete('/api/hojas_mantenimiento/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    await pool.query('DELETE FROM hojas_mantenimiento WHERE id=$1', [id]);
-    res.json({ message: 'Hoja eliminada correctamente' });
-  } catch (error) {
-    console.error('Error al eliminar hoja:', error);
-    res.status(500).json({ error: 'Error al eliminar hoja', detalle: error.message });
-  }
-});
-
-// ------------------ HOJAS DE MANTENIMIENTO ------------------ //
-
-app.get('/api/hojas_mantenimiento', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM hojas_mantenimiento ORDER BY fecha_ejecucion DESC NULLS LAST, created_at DESC');
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Error al obtener hojas:', error);
-    res.status(500).json({ error: 'Error al obtener hojas', detalle: error.message });
-  }
-});
-
-app.get('/api/hojas_mantenimiento/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await pool.query('SELECT * FROM hojas_mantenimiento WHERE id=$1', [id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Hoja no encontrada' });
-    res.json(result.rows[0]);
-  } catch (error) {
-    console.error('Error al obtener hoja:', error);
     res.status(500).json({ error: 'Error al obtener hoja', detalle: error.message });
   }
 });
@@ -378,8 +292,8 @@ app.post('/api/hojas_mantenimiento', async (req, res) => {
       fecha_firma, piezasRequeridas
     } = req.body;
 
-    if (!maquina || !fecha_ejecucion || !tecnico) {
-      return res.status(400).json({ error: 'Faltan campos obligatorios' });
+    if (!fecha_ejecucion || !tecnico) {
+      return res.status(400).json({ error: 'Faltan campos obligatorios: fecha y técnico' });
     }
 
     const result = await pool.query(
@@ -391,27 +305,33 @@ app.post('/api/hojas_mantenimiento', async (req, res) => {
       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
       RETURNING *;`,
       [
-        maquina, nombre_maquina, modelo, fabricante, area, ubicacion, responsable,
-        frecuencia, mes_anio, tipo_mantenimiento, fecha_ejecucion,
-        hora_inicio, hora_fin, tecnico, verificacion, trabajos_realizados,
-        repuestos, observaciones, apta_operacion, firma_tecnico, firma_supervisor, fecha_firma
+        maquina || null, nombre_maquina || null, modelo || null, fabricante || null,
+        area || null, ubicacion || null, responsable || null,
+        frecuencia || null, mes_anio || null, tipo_mantenimiento || null,
+        fecha_ejecucion, hora_inicio || null, hora_fin || null, tecnico,
+        verificacion || null, trabajos_realizados || null,
+        repuestos || null, observaciones || null, apta_operacion || null,
+        firma_tecnico || null, firma_supervisor || null, fecha_firma || null
       ]
     );
 
     const hojaId = result.rows[0].id;
 
-    // Crear órdenes de compra automáticas por cada pieza con ✗
     if (piezasRequeridas && piezasRequeridas.length > 0) {
       for (const p of piezasRequeridas) {
         await pool.query(
           `INSERT INTO ordenes_compra (hoja_id, maquina, tecnico, pieza, cantidad, item_origen)
            VALUES ($1,$2,$3,$4,$5,$6);`,
-          [hojaId, nombre_maquina, tecnico, p.pieza, p.cantidad, p.item]
+          [hojaId, nombre_maquina || maquina, tecnico, p.pieza, p.cantidad || 1, p.item]
         );
       }
     }
 
-    res.status(201).json({ message: 'Hoja guardada correctamente', item: result.rows[0], ordenes: piezasRequeridas?.length || 0 });
+    res.status(201).json({
+      message: 'Hoja guardada correctamente',
+      item: result.rows[0],
+      ordenes: piezasRequeridas ? piezasRequeridas.length : 0
+    });
   } catch (error) {
     console.error('Error al guardar hoja:', error);
     res.status(500).json({ error: 'Error al guardar hoja', detalle: error.message });
@@ -424,7 +344,6 @@ app.delete('/api/hojas_mantenimiento/:id', async (req, res) => {
     await pool.query('DELETE FROM hojas_mantenimiento WHERE id=$1', [id]);
     res.json({ message: 'Hoja eliminada correctamente' });
   } catch (error) {
-    console.error('Error al eliminar hoja:', error);
     res.status(500).json({ error: 'Error al eliminar hoja', detalle: error.message });
   }
 });
@@ -436,7 +355,6 @@ app.get('/api/ordenes_compra', async (req, res) => {
     const result = await pool.query('SELECT * FROM ordenes_compra ORDER BY created_at DESC');
     res.json(result.rows);
   } catch (error) {
-    console.error('Error al obtener órdenes:', error);
     res.status(500).json({ error: 'Error al obtener órdenes', detalle: error.message });
   }
 });
@@ -447,11 +365,10 @@ app.put('/api/ordenes_compra/:id', async (req, res) => {
     const { estado, observacion } = req.body;
     const result = await pool.query(
       `UPDATE ordenes_compra SET estado=$1, observacion=$2 WHERE id=$3 RETURNING *;`,
-      [estado, observacion, id]
+      [estado, observacion || null, id]
     );
     res.json({ message: 'Orden actualizada correctamente', item: result.rows[0] });
   } catch (error) {
-    console.error('Error al actualizar orden:', error);
     res.status(500).json({ error: 'Error al actualizar orden', detalle: error.message });
   }
 });
@@ -462,11 +379,9 @@ app.delete('/api/ordenes_compra/:id', async (req, res) => {
     await pool.query('DELETE FROM ordenes_compra WHERE id=$1', [id]);
     res.json({ message: 'Orden eliminada correctamente' });
   } catch (error) {
-    console.error('Error al eliminar orden:', error);
     res.status(500).json({ error: 'Error al eliminar orden', detalle: error.message });
   }
 });
-
 
 // ------------------ ARCHIVOS ESTÁTICOS ------------------ //
 app.use(express.static(path.join(__dirname, 'public')));
