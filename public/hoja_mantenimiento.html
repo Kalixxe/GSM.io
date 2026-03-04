@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Hoja de Mantenimiento</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    const rolUsuario = localStorage.getItem("role") || "viewer";
+    if (!localStorage.getItem("loggedIn")) {
+      alert("Debes iniciar sesión para acceder.");
+      window.location.href = "index.html";
+    }
+  </script>
+  <style>
+    @media print {
+      @page { size: A4; margin: 15mm; }
+      .no-print { display: none !important; }
+      body { background: white !important; }
+    }
+    .check-row { display: grid; grid-template-columns: 2fr 1fr 2fr; gap: 8px; align-items: start; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+    .check-row:last-child { border-bottom: none; }
+    .pieza-box { grid-column: 1 / -1; background: #fef9c3; border: 1px solid #facc15; border-radius: 6px; padding: 8px; margin-top: 4px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-900">
+
+  <!-- HEADER -->
+  <header class="bg-white shadow-md sticky top-0 z-50 no-print">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="index.html" class="flex items-center space-x-2">
+        <img src="https://images.squarespace-cdn.com/content/v1/58a36221d482e9bca4af6eac/34694fc3-6f92-4054-8a58-3776436c00dc/IMG_9869+2.PNG?format=2500w" alt="Logo" class="h-10 w-auto" />
+        <span class="text-xl font-bold text-red-600">SIMio</span>
+        <span class="text-sm text-gray-500 italic ml-4">(Rol: <span id="nombreRol">...</span>)</span>
+      </a>
+      <nav class="hidden md:flex space-x-4 text-sm font-medium">
+        <a href="index.html" class="text-gray-700 hover:text-red-600">Home</a>
+        <a href="inventario.html" class="text-gray-700 hover:text-red-600">Inventario</a>
+        <a href="mantenimiento.html" class="text-gray-700 hover:text-red-600">Mantenimiento</a>
+        <a href="seguridad.html" class="text-gray-700 hover:text-red-600">Seguridad</a>
+        <a href="hoja_mantenimiento.html" class="text-red-600 font-bold">Hoja Mant.</a>
+        <a href="ordenes.html" class="text-gray-700 hover:text-red-600">Órdenes</a>
+        <a href="maquinas.html" class="text-gray-700 hover:text-red-600">Diagrama</a>
+        <a href="info.html" class="text-gray-500 hover:text-red-600">ℹ️</a>
+      </nav>
+      <button id="menuToggle" class="md:hidden text-gray-700">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+    <div id="mobileMenu" class="md:hidden hidden px-4 pb-4">
+      <a href="index.html" class="block py-2 text-gray-700 hover:text-red-600">Home</a>
+      <a href="inventario.html" class="block py-2 text-gray-700 hover:text-red-600">Inventario</a>
+      <a href="mantenimiento.html" class="block py-2 text-gray-700 hover:text-red-600">Mantenimiento</a>
+      <a href="seguridad.html" class="block py-2 text-gray-700 hover:text-red-600">Seguridad</a>
+      <a href="hoja_mantenimiento.html" class="block py-2 text-red-600 font-bold">Hoja Mant.</a>
+      <a href="ordenes.html" class="block py-2 text-gray-700 hover:text-red-600">Órdenes</a>
+      <a href="maquinas.html" class="block py-2 text-gray-700 hover:text-red-600">Diagrama</a>
+      <a href="info.html" class="block py-2 text-gray-700 hover:text-red-600">ℹ️</a>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto mt-8 p-4">
+
+    <!-- Botones -->
+    <div class="flex gap-3 mb-6 no-print flex-wrap">
+      <button onclick="nuevaHoja()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded font-semibold">➕ Nueva Hoja</button>
+      <button onclick="window.print()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold">🖨️ Imprimir / PDF</button>
+      <button id="btnGuardar" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold">💾 Guardar Registro</button>
+    </div>
+
+    <!-- FORMULARIO -->
+    <div id="hojaMantenimiento" class="bg-white rounded shadow p-8">
+
+      <div class="text-center mb-6 border-b-2 border-red-600 pb-4">
+        <h1 class="text-2xl font-bold text-red-600 uppercase">Hoja de Mantenimiento Preventivo / Correctivo</h1>
+      </div>
+
+      <!-- 1. Datos generales -->
+      <section class="mb-6">
+        <h2 class="text-base font-bold bg-red-600 text-white px-3 py-1 rounded mb-3">1. DATOS GENERALES DEL EQUIPO</h2>
+        <div class="mb-3">
+          <label class="text-sm font-semibold text-gray-600">Seleccionar máquina: *</label>
+          <select id="selectMaquina" class="border border-gray-300 rounded w-full p-2 text-sm mt-1 focus:outline-none focus:border-red-500" onchange="cargarFormularioMaquina()">
+            <option value="">-- Selecciona una máquina --</option>
+            <option value="embaladora_381">Embaladora TK 381</option>
+            <option value="embaladora_386">Embaladora de Box TK 386</option>
+            <option value="cerradora">Cerradora TK 050</option>
+            <option value="glueline">Glueline TK 60KGLINK</option>
+            <option value="quilting">Quilting Machine HC 3500</option>
+            <option value="tapatapa">Tapa-Tapa TK 900/2</option>
+          </select>
+        </div>
+        <div class="grid md:grid-cols-2 gap-3" id="datosGenerales" style="display:none">
+          <div>
+            <label class="text-sm font-semibold text-gray-600">Nombre de la máquina:</label>
+            <input id="nombreMaquina" class="border-b border-gray-400 w-full p-1 text-sm focus:outline-none focus:border-red-500" readonly />
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-gray-600">Modelo:</label>
+            <input id="modelo" class="border-b border-gray-400 w-full p-1 text-sm focus:outline-none focus:border-red-500" readonly />
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-gray-600">Fabricante:</label>
+            <input id="fabricante" class="border-b border-gray-400 w-full p-1 text-sm focus:outline-none focus:border-red-500" readonly />
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-gray-600">Área:</label>
+            <input id="area" class="border-b border-gray-400 w-full p-1 text-sm focus:outline-none focus:border-red-500" readonly />
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-gray-600">Ubicación:</label>
+            <input id="ubicacion" class="border-b border-gray-400 w-full p-1 text-sm focus:outline-none focus:border-red-500" readonly />
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-gray-600">Responsable del equipo:</label>
+            <input id="responsable" class="border-b border-gray-400 w-full p-1 text-sm focus:outline-none focus:border-red-500" placeholder="Nombre del responsable" />
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Datos mantenimiento -->
+      <section class="mb-6" id="seccionDatosMant" style="display:none">
+        <h2 class="text-base font-bold bg-red-600 text-white px-3 py-1 rounded mb-3">2. DATOS DEL MANTENIMIENTO</h2>
+        <div class="grid md:grid-cols-2 gap-3">
+          <div>
+            <label class="text-sm font-semibold text-gray-600">Frecuencia:</label>
+            <div id="frecuenciaOpciones" class="flex gap-3 flex-wrap mt-1 text-sm"></div>
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-gray-600">Mes / Año:</label>
+            <input id="mesAnio" type="month" class="border-b border-gray-400 w-full p-1 text-sm focus:outline-none" />
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-gray-600">Tipo de mantenimiento:</label>
+            <div class="flex gap-4 mt-1">
+              <label class="flex items-center gap-1 text-sm"><input type="radio" name="tipoMant" value="Preventivo" /> Preventivo</label>
+              <label class="flex items-center gap-1 text-sm"><input type="radio" name="tipoMant" value="Correctivo" /> Correctivo</label>
+            </div>
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-gray-600">Fecha de ejecución: *</label>
+            <input id="fechaEjecucion" type="date" class="border-b border-gray-400 w-full p-1 text-sm focus:outline-none" />
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-gray-600">Hora inicio:</label>
+            <input id="horaInicio" type="time" class="border-b border-gray-400 w-full p-1 text-sm focus:outline-none" />
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-gray-600">Hora fin:</label>
+            <input id="horaFin" type="time" class="border-b border-gray-400 w-full p-1 text-sm focus:outline-none" />
+          </div>
+          <div class="md:col-span-2">
+            <label class="text-sm font-semibold text-gray-600">Técnico de mantenimiento: *</label>
+            <input id="tecnico" class="border-b border-gray-400 w-full p-1 text-sm focus:outline-none" placeholder="Nombre del técnico" />
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Lista de verificación (dinámica) -->
+      <section class="mb-6" id="seccionVerificacion" style="display:none">
+        <h2 class="text-base font-bold bg-red-600 text-white px-3 py-1 rounded mb-3">3. LISTA DE VERIFICACIÓN (✓ / ✗ / N/A)</h2>
+        <div id="contenidoVerificacion"></div>
+      </section>
+
+      <!-- 4. Trabajos realizados -->
+      <section class="mb-6" id="seccionTrabajos" style="display:none">
+        <h2 class="text-base font-bold bg-red-600 text-white px-3 py-1 rounded mb-3">4. DESCRIPCIÓN DE TRABAJOS REALIZADOS</h2>
+        <textarea id="trabajosRealizados" class="border border-gray-300 w-full p-2 text-sm rounded focus:outline-none focus:border-red-500" rows="4" placeholder="Describe los trabajos realizados..."></textarea>
+      </section>
+
+      <!-- 5. Repuestos -->
+      <section class="mb-6" id="seccionRepuestos" style="display:none">
+        <h2 class="text-base font-bold bg-red-600 text-white px-3 py-1 rounded mb-3">5. REPUESTOS / MATERIALES UTILIZADOS</h2>
+        <div class="grid grid-cols-3 gap-2 text-xs font-semibold text-gray-500 mb-1 px-1">
+          <span class="col-span-2">Repuesto / Material</span><span>Cantidad</span>
+        </div>
+        <div id="listaRepuestos" class="space-y-2"></div>
+        <button type="button" onclick="agregarRepuesto()" class="mt-2 text-sm text-red-600 hover:underline no-print">+ Añadir repuesto</button>
+      </section>
+
+      <!-- 6. Observaciones -->
+      <section class="mb-6" id="seccionObservaciones" style="display:none">
+        <h2 class="text-base font-bold bg-red-600 text-white px-3 py-1 rounded mb-3">6. OBSERVACIONES GENERALES</h2>
+        <textarea id="observaciones" class="border border-gray-300 w-full p-2 text-sm rounded focus:outline-none focus:border-red-500" rows="3" placeholder="Observaciones adicionales..."></textarea>
+        <div id="aptaOperacionDiv" class="mt-3 hidden">
+          <label class="text-sm font-semibold text-gray-700">¿La máquina queda apta para operación?</label>
+          <div class="flex gap-4 mt-1">
+            <label class="flex items-center gap-1 text-sm"><input type="radio" name="aptaOp" value="SI" /> ✅ SÍ</label>
+            <label class="flex items-center gap-1 text-sm"><input type="radio" name="aptaOp" value="NO" /> ❌ NO</label>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. Firmas -->
+      <section class="mb-4" id="seccionFirmas" style="display:none">
+        <h2 class="text-base font-bold bg-red-600 text-white px-3 py-1 rounded mb-3">7. FIRMAS</h2>
+        <div class="grid md:grid-cols-2 gap-6">
+          <div>
+            <label class="text-sm font-semibold text-gray-600">Técnico de mantenimiento:</label>
+            <input id="firmaTecnico" class="border-b border-gray-400 w-full p-1 text-sm focus:outline-none mt-1" placeholder="Nombre completo" />
+            <div class="border-b border-gray-400 mt-6 mb-1"></div>
+            <p class="text-xs text-gray-400">Firma</p>
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-gray-600">Supervisor de área:</label>
+            <input id="firmaSupervisor" class="border-b border-gray-400 w-full p-1 text-sm focus:outline-none mt-1" placeholder="Nombre completo" />
+            <div class="border-b border-gray-400 mt-6 mb-1"></div>
+            <p class="text-xs text-gray-400">Firma</p>
+          </div>
+        </div>
+        <div class="mt-4">
+          <label class="text-sm font-semibold text-gray-600">Fecha: </label>
+          <input id="fechaFirma" type="date" class="border-b border-gray-400 p-1 text-sm focus:outline-none ml-2" />
+        </div>
+        <p id="notaMaquina" class="text-xs text-gray-500 mt-4 italic border-t pt-3"></p>
+      </section>
+    </div>
+
+    <!-- Historial -->
+    <div class="mt-10 no-print">
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">📋 Historial de Hojas Guardadas</h2>
+      <input id="filtroHistorial" placeholder="🔍 Buscar por máquina o técnico..." class="p-2 border rounded text-sm w-72 mb-4" />
+      <div id="tablaHistorial" class="bg-white rounded shadow overflow-x-auto">
+        <p class="text-gray-400 text-center py-6">Cargando historial...</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-gray-600 text-gray-200 text-center py-6 mt-10 text-sm no-print">
+    <div class="max-w-4xl mx-auto px-4 flex flex-col items-center space-y-2">
+      <p>© 2025 <strong>GEOWAY</strong>, Technology-Based Initiative – IBT. All rights reserved.</p>
+      <a href="https://geo-way.github.io/GeoWay.io/index.html" target="_blank">
+        <img src="https://geo-way.github.io/GeoWay.io/images/Logo5.png" alt="GEOWAY Logo" class="h-8 invert">
+      </a>
+    </div>
+  </footer>
+
+<script>
+const API_BASE = "https://gsmio-production-3b4c.up.railway.app";
+document.getElementById("nombreRol").innerText = rolUsuario;
+document.getElementById("menuToggle").addEventListener("click", () => {
+  document.getElementById("mobileMenu").classList.toggle("hidden");
+});
+
+// ===================== CONFIGURACIÓN DE MÁQUINAS =====================
+const MAQUINAS = {
+  embaladora_381: {
+    nombre: "Maquina empaque y enrollado", modelo: "TK 381", fabricante: "Teknomac",
+    area: "Embalaje", ubicacion: "Línea de ensamble final – Planta principal",
+    frecuencias: ["Mensual"],
+    nota: "Todo mantenimiento debe realizarse con la máquina desconectada y siguiendo las normas de seguridad para la MAQUINA Embaladora TK 381.",
+    aptaOperacion: false,
+    secciones: [
+      { titulo: "A. Seguridad", items: ["Máquina desconectada antes de intervenir","Protecciones y guardas en su lugar","Botón de paro de emergencia funcional","Señalización y advertencias visibles"] },
+      { titulo: "B. Sistema Mecánico", items: ["Partes móviles limpias y lubricadas","Cuchilla en buen estado","Barras de sellado en buen estado y alineadas","Tornillería y fijaciones ajustadas","No se detectan ruidos o vibraciones anormales"] },
+      { titulo: "C. Sistema Eléctrico", items: ["Cableado en buen estado","Conexiones firmes y seguras","Sensores limpios y operativos","Tablero eléctrico sin daños visibles"] },
+      { titulo: "D. Limpieza General", items: ["Cuadro eléctrico principal limpio","Ventiladores cuadro eléctrico filtros limpios","Residuos retirados","Máquina libre de polvo y restos de material"] }
+    ]
+  },
+  embaladora_386: {
+    nombre: "Embaladora de box", modelo: "TK 386", fabricante: "Teknomac",
+    area: "Área Box", ubicacion: "Línea de ensamblado box – Planta principal",
+    frecuencias: ["Mensual"],
+    nota: "Todo mantenimiento debe realizarse con la máquina desconectada y siguiendo las normas de seguridad para la Embaladora de Box TK 386.",
+    aptaOperacion: false,
+    secciones: [
+      { titulo: "A. Seguridad", items: ["Máquina desconectada antes de intervenir","Protecciones y guardas en su lugar","Botón de paro de emergencia funcional","Señalización y advertencias visibles"] },
+      { titulo: "B. Sistema Mecánico", items: ["Partes móviles limpias y lubricadas","Cuchilla en buen estado","Barras de sellado en buen estado y alineadas","Tornillería y fijaciones ajustadas","No se detectan ruidos o vibraciones anormales"] },
+      { titulo: "C. Sistema Eléctrico", items: ["Cableado en buen estado","Conexiones firmes y seguras","Sensores limpios y operativos","Tablero eléctrico sin daños visibles"] },
+      { titulo: "D. Limpieza General", items: ["Cuadro eléctrico principal limpio","Ventiladores cuadro eléctrico filtros limpios","Residuos retirados","Máquina libre de polvo y restos de material"] }
+    ]
+  },
+  cerradora: {
+    nombre: "Cerradora de colchones industrial", modelo: "TK 050", fabricante: "Teknomac",
+    area: "Manufactura – Línea de ensamblado", ubicacion: "Planta principal",
+    frecuencias: ["Mensual"],
+    nota: "Todo mantenimiento debe realizarse con la máquina desconectada y siguiendo las normas de seguridad para la CERRADORA TK 050.",
+    aptaOperacion: false,
+    secciones: [
+      { titulo: "A. Seguridad", items: ["Máquina desconectada de la línea eléctrica","Pedal de costura sin posibilidad de accionamiento","Botón de paro de emergencia correcto","Señalización y advertencias visibles"] },
+      { titulo: "B. Sistema Mecánico", items: ["Estado barra de aguja","Porta aguja firme y alineado","Mecanismo de costura sin trabas o ruidos","Ejes y articulaciones sin juego excesivo","Partes móviles limpias y lubricadas","Rodamientos sin ruido y lubricados"] },
+      { titulo: "C. Sistema Eléctrico", items: ["Cableado en buen estado","Conexiones firmes y seguras","Sensores limpios y operativos","Tablero eléctrico sin daños visibles"] },
+      { titulo: "D. Limpieza General", items: ["Cuadro eléctrico principal limpio","Ventiladores cuadro eléctrico filtros limpios","Residuos retirados","Máquina libre de polvo y restos de material"] }
+    ]
+  },
+  glueline: {
+    nombre: "GLUELINE", modelo: "TK 60KGLINK", fabricante: "Teknomac",
+    area: "Ensamble", ubicacion: "Área de Encolado – Planta principal",
+    frecuencias: ["Semanal","Mensual","Trimestral"],
+    nota: "Todo mantenimiento debe realizarse con la máquina desconectada, sistema térmico enfriado y aplicando procedimiento LOTO.",
+    aptaOperacion: true,
+    secciones: [
+      { titulo: "A. Seguridad", items: ["Botón de paro de emergencia funciona correctamente","Señalizaciones de superficies calientes visibles","Guardas de rodillos y zonas de arrastre instaladas","Aislamiento térmico en tanque y mangueras en buen estado","No hay fugas de adhesivo caliente visibles","Área limpia sin acumulación de cola en el piso","Interruptor general y protecciones eléctricas en buen estado"] },
+      { titulo: "B. Sistema Mecánico", items: ["Rodillos de aplicación sin desgaste irregular","Guías y soportes alineados correctamente","Sistema de arrastre de material funciona suave","Ejes, poleas y acoples firmes","Estructura sin tornillos flojos","Motores sin vibración o ruido anormal"] },
+      { titulo: "C. Sistema de Adhesivo (Hot Melt)", items: ["Tanque de adhesivo limpio (sin carbonización)","Resistencias calefactoras operativas","Sensores de temperatura funcionando correctamente","Mangueras térmicas sin grietas o fugas","Boquillas sin obstrucciones","Control de temperatura estable"] },
+      { titulo: "D. Sistema Eléctrico", items: ["Cableado sin daños ni empalmes improvisados","Conexiones eléctricas firmes","Tablero eléctrico limpio y cerrado","Sensores y finales de carrera operativos","Sistema de control principal responde correctamente"] },
+      { titulo: "E. Limpieza General", items: ["Máquina libre de residuos de adhesivo","Área de aplicación limpia","Ventiladores y rejillas libres de polvo","No hay acumulación de adhesivo en bandejas o soportes","Piso limpio y sin riesgo de resbalones"] },
+      { titulo: "F. Lubricación", items: ["Rodamientos lubricados","Guías lineales lubricadas","Cadenas y mecanismos móviles lubricados","Ejes de rodillos con lubricación adecuada"] }
+    ]
+  },
+  quilting: {
+    nombre: "Multi-Needle Quilting Machine", modelo: "HC 3500", fabricante: "Hengchang Machinery",
+    area: "Quilting Area", ubicacion: "Área de Quilting – Planta principal",
+    frecuencias: ["Mensual"],
+    nota: "Todo mantenimiento debe realizarse con la máquina desconectada y siguiendo las normas de seguridad para la Multi-Needle Quilting Machine.",
+    aptaOperacion: false,
+    secciones: [
+      { titulo: "A. Seguridad", items: ["Máquina apagada y desconectada","Protecciones y puertas de emergencia","Botón paro emergencia funciona correctamente","Señalizaciones y advertencias visibles","Área limpia y libre de objetos"] },
+      { titulo: "B. Sistema Mecánico", items: ["Estado general barra de agujas, prensa telas, partes móviles limpias y lubricadas","Tensores y sensores de hilo","Rodillos de arrastre material","Correas, poleas, cadenas, guías de tracción","Motores (Ruido / vibración)"] },
+      { titulo: "C. Sistema Eléctrico", items: ["Cables en buen estado","Conexiones correctas y seguras","Sensores limpios y operativos","Tablero eléctrico sin daños visibles"] },
+      { titulo: "D. Limpieza General", items: ["Cuadro eléctrico principal limpio","Ventiladores cuadro eléctrico filtros limpios","Residuos retirados","Máquina libre de polvo y restos de material"] },
+      { titulo: "E. Lubricación", items: ["Barra de agujas","Guías lineales","Rodamientos","Cadenas / mecanismos móviles"] }
+    ]
+  },
+  tapatapa: {
+    nombre: "Tapa-tapa", modelo: "TK 900/2", fabricante: "Teknomac S.R.L",
+    area: "Quilting Área", ubicacion: "Planta principal",
+    frecuencias: ["Mensual"],
+    nota: "Todo mantenimiento debe realizarse con la máquina desconectada y siguiendo las normas de seguridad de Teknomac S.R.L para la TK900.",
+    aptaOperacion: true,
+    secciones: [
+      { titulo: "A. Seguridad", items: ["Botón paro emergencia funciona correctamente","Señalizaciones de seguridad visibles y legibles","Cubiertas y guardas de seguridad instaladas y firmes","No hay riesgo de atrapamiento visible en partes móviles","Área limpia y libre de objetos","Interruptor general en buen estado"] },
+      { titulo: "B. Sistema Mecánico", items: ["Agujas y sistema de costura en buen estado en todos los cabezales","Estado correas de tracción (tensión y desgaste)","Estado en cabezales de costura parte Superior","Estado general en cabezales de costura parte inferior","Prensa telas en correcto estado","Tensores y sensores de hilo funcionan correctamente","Sistema de arrastre de tela funciona suave","Correas, poleas, cadenas, guías de tracción","Motores (Ruido / vibración)"] },
+      { titulo: "C. Sistema Eléctrico", items: ["Cableado sin daños ni empalmes improvisados","Conexiones eléctricas firmes y seguras","Motores sin sobrecalentamiento","Tablero eléctrico limpio y cerrado","Sensores y finales de carrera operativos","Tablero eléctrico sin daños visibles","Funcionamiento correcto de control principal (Homming / actuador)"] },
+      { titulo: "D. Limpieza General", items: ["Área de costura libre de suciedad y residuos (Pinzas / módulo de corte)","Parte inferior de la máquina limpia","Ventiladores cuadro eléctrico filtros limpios","Mesa y área alrededor del cuadro principal despejada","Residuos retirados","Máquina libre de polvo y restos de material","No hay acumulación de aceite o grasa en el piso"] },
+      { titulo: "E. Lubricación", items: ["Ejes principales lubricados","Sistema de bielas y articulaciones correctos en todos los cabezales","Barra de agujas","Guías lineales","Rodamientos lubricados","Cadenas / mecanismos móviles","Nivel de aceite cabezales (Superior / inferior)"] }
+    ]
+  }
+};
+
+// ===================== CARGAR FORMULARIO POR MÁQUINA =====================
+function cargarFormularioMaquina() {
+  const key = document.getElementById("selectMaquina").value;
+  if (!key) return;
+  const m = MAQUINAS[key];
+
+  // Datos generales
+  document.getElementById("nombreMaquina").value = m.nombre;
+  document.getElementById("modelo").value = m.modelo;
+  document.getElementById("fabricante").value = m.fabricante;
+  document.getElementById("area").value = m.area;
+  document.getElementById("ubicacion").value = m.ubicacion;
+  document.getElementById("responsable").value = "";
+  document.getElementById("datosGenerales").style.display = "grid";
+
+  // Frecuencias
+  document.getElementById("frecuenciaOpciones").innerHTML = m.frecuencias.map(f =>
+    `<label class="flex items-center gap-1"><input type="radio" name="frecuencia" value="${f}" /> ${f}</label>`
+  ).join("");
+
+  // Nota
+  document.getElementById("notaMaquina").textContent = m.nota;
+
+  // Apta para operación
+  const aptaDiv = document.getElementById("aptaOperacionDiv");
+  if (m.aptaOperacion) aptaDiv.classList.remove("hidden");
+  else aptaDiv.classList.add("hidden");
+
+  // Verificación dinámica
+  const contenedor = document.getElementById("contenidoVerificacion");
+  contenedor.innerHTML = m.secciones.map((sec, si) => `
+    <div class="mb-5">
+      <h3 class="font-bold text-sm bg-gray-200 px-2 py-1 rounded mb-2">${sec.titulo}</h3>
+      <div class="grid grid-cols-3 gap-2 text-xs font-semibold text-gray-500 px-1 mb-1">
+        <span>Ítem</span><span class="text-center">Estado</span><span>Observaciones</span>
+      </div>
+      ${sec.items.map((item, ii) => `
+        <div class="check-row" id="row_${si}_${ii}">
+          <span class="text-sm">${item}</span>
+          <div class="flex justify-center gap-1 flex-wrap">
+            <label class="flex items-center gap-1 text-xs cursor-pointer">
+              <input type="radio" name="check_${si}_${ii}" value="✓" onchange="onEstadoCambio(${si},${ii},'✓')" class="accent-green-600" /> ✓
+            </label>
+            <label class="flex items-center gap-1 text-xs cursor-pointer">
+              <input type="radio" name="check_${si}_${ii}" value="✗" onchange="onEstadoCambio(${si},${ii},'✗')" class="accent-red-600" /> ✗
+            </label>
+            <label class="flex items-center gap-1 text-xs cursor-pointer">
+              <input type="radio" name="check_${si}_${ii}" value="N/A" onchange="onEstadoCambio(${si},${ii},'N/A')" /> N/A
+            </label>
+          </div>
+          <input class="border-b border-gray-300 w-full text-xs p-1 focus:outline-none" placeholder="Observación..." id="obs_${si}_${ii}" />
+        </div>
+        <div id="pieza_${si}_${ii}" class="hidden px-1 pb-2">
+          <div class="pieza-box">
+            <span class="text-xs font-semibold text-yellow-800">⚠️ Pieza requerida:</span>
+            <input class="border border-yellow-400 rounded p-1 text-xs flex-1 min-w-32" placeholder="Nombre de la pieza..." id="piezaNombre_${si}_${ii}" />
+            <input class="border border-yellow-400 rounded p-1 text-xs w-16" placeholder="Cant." type="number" min="1" value="1" id="piezaCant_${si}_${ii}" />
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `).join("");
+
+  // Mostrar secciones
+  ["seccionDatosMant","seccionVerificacion","seccionTrabajos","seccionRepuestos","seccionObservaciones","seccionFirmas"].forEach(id => {
+    document.getElementById(id).style.display = "block";
+  });
+
+  // Repuestos
+  document.getElementById("listaRepuestos").innerHTML = "";
+  contRepuestos = 0;
+  agregarRepuesto();
+}
+
+// Mostrar campo de pieza cuando se marca ✗
+function onEstadoCambio(si, ii, valor) {
+  const piezaDiv = document.getElementById(`pieza_${si}_${ii}`);
+  if (valor === "✗") {
+    piezaDiv.classList.remove("hidden");
+  } else {
+    piezaDiv.classList.add("hidden");
+    document.getElementById(`piezaNombre_${si}_${ii}`).value = "";
+    document.getElementById(`piezaCant_${si}_${ii}`).value = "1";
+  }
+}
+
+// ===================== REPUESTOS =====================
+let contRepuestos = 0;
+function agregarRepuesto() {
+  contRepuestos++;
+  const div = document.createElement("div");
+  div.className = "grid grid-cols-3 gap-2";
+  div.innerHTML = `
+    <input class="col-span-2 border-b border-gray-300 p-1 text-sm focus:outline-none" placeholder="Nombre del repuesto" id="repNombre_${contRepuestos}" />
+    <input class="border-b border-gray-300 p-1 text-sm focus:outline-none" placeholder="Cantidad" id="repCantidad_${contRepuestos}" />
+  `;
+  document.getElementById("listaRepuestos").appendChild(div);
+}
+
+// ===================== NUEVA HOJA =====================
+function nuevaHoja() {
+  if (!confirm("¿Limpiar el formulario para una nueva hoja?")) return;
+  document.getElementById("selectMaquina").value = "";
+  ["datosGenerales","seccionDatosMant","seccionVerificacion","seccionTrabajos","seccionRepuestos","seccionObservaciones","seccionFirmas"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
+  document.getElementById("contenidoVerificacion").innerHTML = "";
+  document.getElementById("listaRepuestos").innerHTML = "";
+  contRepuestos = 0;
+}
+
+// ===================== RECOGER DATOS =====================
+function recogerDatos() {
+  const key = document.getElementById("selectMaquina").value;
+  const m = MAQUINAS[key];
+  const tipoMant = document.querySelector('input[name="tipoMant"]:checked');
+  const frecuencia = document.querySelector('input[name="frecuencia"]:checked');
+  const aptaOp = document.querySelector('input[name="aptaOp"]:checked');
+
+  // Verificación e ítems con ✗
+  const verificacion = {};
+  const piezasRequeridas = [];
+
+  if (m) {
+    m.secciones.forEach((sec, si) => {
+      verificacion[sec.titulo] = sec.items.map((item, ii) => {
+        const estado = document.querySelector(`input[name="check_${si}_${ii}"]:checked`);
+        const obs = document.getElementById(`obs_${si}_${ii}`)?.value || "";
+        const estadoVal = estado ? estado.value : "";
+
+        if (estadoVal === "✗") {
+          const pieza = document.getElementById(`piezaNombre_${si}_${ii}`)?.value?.trim();
+          const cant = document.getElementById(`piezaCant_${si}_${ii}`)?.value || "1";
+          if (pieza) {
+            piezasRequeridas.push({ item, pieza, cantidad: parseInt(cant) });
+          }
+        }
+        return { item, estado: estadoVal, observacion: obs };
+      });
+    });
+  }
+
+  const repuestos = [];
+  for (let i = 1; i <= contRepuestos; i++) {
+    const nombre = document.getElementById(`repNombre_${i}`)?.value?.trim();
+    const cantidad = document.getElementById(`repCantidad_${i}`)?.value?.trim();
+    if (nombre) repuestos.push({ nombre, cantidad });
+  }
+
+  return {
+    datos: {
+      maquina: key,
+      nombre_maquina: document.getElementById("nombreMaquina").value,
+      modelo: document.getElementById("modelo").value,
+      fabricante: document.getElementById("fabricante").value,
+      area: document.getElementById("area").value,
+      ubicacion: document.getElementById("ubicacion").value,
+      responsable: document.getElementById("responsable").value.trim(),
+      frecuencia: frecuencia ? frecuencia.value : "",
+      mes_anio: document.getElementById("mesAnio").value,
+      tipo_mantenimiento: tipoMant ? tipoMant.value : "",
+      fecha_ejecucion: document.getElementById("fechaEjecucion").value,
+      hora_inicio: document.getElementById("horaInicio").value,
+      hora_fin: document.getElementById("horaFin").value,
+      tecnico: document.getElementById("tecnico").value.trim(),
+      verificacion: JSON.stringify(verificacion),
+      trabajos_realizados: document.getElementById("trabajosRealizados").value.trim(),
+      repuestos: JSON.stringify(repuestos),
+      observaciones: document.getElementById("observaciones").value.trim(),
+      apta_operacion: aptaOp ? aptaOp.value : null,
+      firma_tecnico: document.getElementById("firmaTecnico").value.trim(),
+      firma_supervisor: document.getElementById("firmaSupervisor").value.trim(),
+      fecha_firma: document.getElementById("fechaFirma").value
+    },
+    piezasRequeridas
+  };
+}
+
+// ===================== GUARDAR =====================
+document.getElementById("btnGuardar").addEventListener("click", async function() {
+  const { datos, piezasRequeridas } = recogerDatos();
+  if (!datos.maquina || !datos.fecha_ejecucion || !datos.tecnico) {
+    alert("Por favor completa: Máquina, Fecha de ejecución y Técnico.");
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/hojas_mantenimiento`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...datos, piezasRequeridas })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const result = await res.json();
+
+    if (piezasRequeridas.length > 0) {
+      alert(`✅ Hoja guardada correctamente.\n⚠️ Se generaron ${piezasRequeridas.length} orden(es) de compra automáticamente.`);
+    } else {
+      alert("✅ Hoja de mantenimiento guardada correctamente.");
+    }
+    cargarHistorial();
+  } catch (err) {
+    alert("❌ Error al guardar: " + err.message);
+  }
+});
+
+// ===================== HISTORIAL =====================
+let datosHistorial = [];
+async function cargarHistorial() {
+  try {
+    const res = await fetch(`${API_BASE}/api/hojas_mantenimiento`);
+    datosHistorial = await res.json();
+    renderHistorial(datosHistorial);
+  } catch (err) {
+    document.getElementById("tablaHistorial").innerHTML = `<p class="text-red-400 text-center py-4">Error al cargar historial.</p>`;
+  }
+}
+
+function renderHistorial(datos) {
+  if (!datos || datos.length === 0) {
+    document.getElementById("tablaHistorial").innerHTML = `<p class="text-gray-400 text-center py-6">No hay hojas guardadas aún.</p>`;
+    return;
+  }
+  document.getElementById("tablaHistorial").innerHTML = `
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-200">
+        <tr>
+          <th class="p-2 text-left">Fecha</th>
+          <th class="p-2 text-left">Máquina</th>
+          <th class="p-2 text-left">Técnico</th>
+          <th class="p-2 text-left">Tipo</th>
+          <th class="p-2 text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${datos.map(h => `
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-2">${h.fecha_ejecucion || ""}</td>
+            <td class="p-2">${h.nombre_maquina || ""}</td>
+            <td class="p-2">${h.tecnico || ""}</td>
+            <td class="p-2">${h.tipo_mantenimiento || ""}</td>
+            <td class="p-2 text-center flex gap-2 justify-center">
+              <button onclick="cargarHoja(${h.id})" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded">Ver</button>
+              ${rolUsuario === "admin" ? `<button onclick="eliminarHoja(${h.id})" class="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 rounded">🗑️</button>` : ""}
+            </td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+document.getElementById("filtroHistorial").addEventListener("input", function() {
+  const q = this.value.toLowerCase();
+  renderHistorial(datosHistorial.filter(h =>
+    (h.nombre_maquina||"").toLowerCase().includes(q) || (h.tecnico||"").toLowerCase().includes(q)
+  ));
+});
+
+async function cargarHoja(id) {
+  try {
+    const res = await fetch(`${API_BASE}/api/hojas_mantenimiento/${id}`);
+    const h = await res.json();
+    document.getElementById("selectMaquina").value = h.maquina || "";
+    cargarFormularioMaquina();
+    setTimeout(() => {
+      document.getElementById("responsable").value = h.responsable || "";
+      document.getElementById("mesAnio").value = h.mes_anio || "";
+      document.getElementById("fechaEjecucion").value = h.fecha_ejecucion || "";
+      document.getElementById("horaInicio").value = h.hora_inicio || "";
+      document.getElementById("horaFin").value = h.hora_fin || "";
+      document.getElementById("tecnico").value = h.tecnico || "";
+      document.getElementById("trabajosRealizados").value = h.trabajos_realizados || "";
+      document.getElementById("observaciones").value = h.observaciones || "";
+      document.getElementById("firmaTecnico").value = h.firma_tecnico || "";
+      document.getElementById("firmaSupervisor").value = h.firma_supervisor || "";
+      document.getElementById("fechaFirma").value = h.fecha_firma || "";
+
+      if (h.frecuencia) {
+        const r = document.querySelector(`input[name="frecuencia"][value="${h.frecuencia}"]`);
+        if (r) r.checked = true;
+      }
+      if (h.tipo_mantenimiento) {
+        const r = document.querySelector(`input[name="tipoMant"][value="${h.tipo_mantenimiento}"]`);
+        if (r) r.checked = true;
+      }
+      if (h.apta_operacion) {
+        const r = document.querySelector(`input[name="aptaOp"][value="${h.apta_operacion}"]`);
+        if (r) r.checked = true;
+      }
+
+      if (h.verificacion) {
+        const v = JSON.parse(h.verificacion);
+        const m = MAQUINAS[h.maquina];
+        if (m) {
+          m.secciones.forEach((sec, si) => {
+            const secData = v[sec.titulo];
+            if (secData) {
+              secData.forEach((item, ii) => {
+                if (item.estado) {
+                  const r = document.querySelector(`input[name="check_${si}_${ii}"][value="${item.estado}"]`);
+                  if (r) { r.checked = true; onEstadoCambio(si, ii, item.estado); }
+                }
+                const obs = document.getElementById(`obs_${si}_${ii}`);
+                if (obs) obs.value = item.observacion || "";
+              });
+            }
+          });
+        }
+      }
+
+      if (h.repuestos) {
+        document.getElementById("listaRepuestos").innerHTML = "";
+        contRepuestos = 0;
+        JSON.parse(h.repuestos).forEach(r => {
+          agregarRepuesto();
+          document.getElementById(`repNombre_${contRepuestos}`).value = r.nombre || "";
+          document.getElementById(`repCantidad_${contRepuestos}`).value = r.cantidad || "";
+        });
+        if (contRepuestos === 0) agregarRepuesto();
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 100);
+  } catch (err) {
+    alert("❌ Error al cargar hoja: " + err.message);
+  }
+}
+
+async function eliminarHoja(id) {
+  if (!confirm("¿Eliminar esta hoja de mantenimiento?")) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/hojas_mantenimiento/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error(await res.text());
+    alert("✅ Hoja eliminada.");
+    cargarHistorial();
+  } catch (err) {
+    alert("❌ Error al eliminar: " + err.message);
+  }
+}
+
+window.onload = cargarHistorial;
+</script>
+</body>
+</html>
