@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Órdenes de Compra</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    const rolUsuario = localStorage.getItem("role") || "viewer";
+    if (!localStorage.getItem("loggedIn")) {
+      alert("Debes iniciar sesión para acceder.");
+      window.location.href = "index.html";
+    }
+  </script>
+</head>
+<body class="bg-gray-100 text-gray-900">
+
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="index.html" class="flex items-center space-x-2">
+        <img src="https://images.squarespace-cdn.com/content/v1/58a36221d482e9bca4af6eac/34694fc3-6f92-4054-8a58-3776436c00dc/IMG_9869+2.PNG?format=2500w" alt="Logo" class="h-10 w-auto" />
+        <span class="text-xl font-bold text-red-600">SIMio</span>
+        <span class="text-sm text-gray-500 italic ml-4">(Rol: <span id="nombreRol">...</span>)</span>
+      </a>
+      <nav class="hidden md:flex space-x-4 text-sm font-medium">
+        <a href="index.html" class="text-gray-700 hover:text-red-600">Home</a>
+        <a href="inventario.html" class="text-gray-700 hover:text-red-600">Inventario</a>
+        <a href="mantenimiento.html" class="text-gray-700 hover:text-red-600">Mantenimiento</a>
+        <a href="seguridad.html" class="text-gray-700 hover:text-red-600">Seguridad</a>
+        <a href="hoja_mantenimiento.html" class="text-gray-700 hover:text-red-600">Hoja Mant.</a>
+        <a href="ordenes.html" class="text-red-600 font-bold">Órdenes</a>
+        <a href="maquinas.html" class="text-gray-700 hover:text-red-600">Diagrama</a>
+        <a href="info.html" class="text-gray-500 hover:text-red-600">ℹ️</a>
+      </nav>
+      <button id="menuToggle" class="md:hidden text-gray-700">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+    <div id="mobileMenu" class="md:hidden hidden px-4 pb-4">
+      <a href="index.html" class="block py-2 text-gray-700 hover:text-red-600">Home</a>
+      <a href="inventario.html" class="block py-2 text-gray-700 hover:text-red-600">Inventario</a>
+      <a href="mantenimiento.html" class="block py-2 text-gray-700 hover:text-red-600">Mantenimiento</a>
+      <a href="seguridad.html" class="block py-2 text-gray-700 hover:text-red-600">Seguridad</a>
+      <a href="hoja_mantenimiento.html" class="block py-2 text-gray-700 hover:text-red-600">Hoja Mant.</a>
+      <a href="ordenes.html" class="block py-2 text-red-600 font-bold">Órdenes</a>
+      <a href="maquinas.html" class="block py-2 text-gray-700 hover:text-red-600">Diagrama</a>
+      <a href="info.html" class="block py-2 text-gray-700 hover:text-red-600">ℹ️</a>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto mt-8 p-4">
+
+    <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+      <h1 class="text-2xl font-bold text-gray-800">📦 Órdenes de Compra</h1>
+      <div class="flex gap-3 flex-wrap">
+        <select id="filtroEstado" class="p-2 border rounded text-sm" onchange="filtrarOrdenes()">
+          <option value="">Todos los estados</option>
+          <option value="pendiente">🔴 Pendiente</option>
+          <option value="en_proceso">🟡 En proceso</option>
+          <option value="completada">🟢 Completada</option>
+        </select>
+        <input id="filtroBusqueda" placeholder="🔍 Buscar por máquina o pieza..." class="p-2 border rounded text-sm w-64" oninput="filtrarOrdenes()" />
+      </div>
+    </div>
+
+    <!-- Resumen -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+        <p class="text-3xl font-bold text-red-600" id="cntPendiente">0</p>
+        <p class="text-sm text-red-700 mt-1">🔴 Pendientes</p>
+      </div>
+      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+        <p class="text-3xl font-bold text-yellow-600" id="cntEnProceso">0</p>
+        <p class="text-sm text-yellow-700 mt-1">🟡 En proceso</p>
+      </div>
+      <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+        <p class="text-3xl font-bold text-green-600" id="cntCompletada">0</p>
+        <p class="text-sm text-green-700 mt-1">🟢 Completadas</p>
+      </div>
+    </div>
+
+    <!-- Tabla órdenes -->
+    <div class="bg-white rounded shadow overflow-x-auto">
+      <div id="tablaOrdenes">
+        <p class="text-gray-400 text-center py-8">Cargando órdenes...</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal observación -->
+  <div id="modalObs" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+      <h3 class="text-lg font-semibold mb-4">📝 Actualizar Orden</h3>
+      <input type="hidden" id="obsOrdenId" />
+      <div class="mb-4">
+        <label class="text-sm font-semibold text-gray-600">Estado:</label>
+        <select id="obsEstado" class="border border-gray-300 rounded w-full p-2 text-sm mt-1">
+          <option value="pendiente">🔴 Pendiente</option>
+          <option value="en_proceso">🟡 En proceso</option>
+          <option value="completada">🟢 Completada</option>
+        </select>
+      </div>
+      <div class="mb-4">
+        <label class="text-sm font-semibold text-gray-600">Observación:</label>
+        <textarea id="obsTexto" class="border border-gray-300 rounded w-full p-2 text-sm mt-1" rows="3" placeholder="Añade una nota sobre esta orden..."></textarea>
+      </div>
+      <div class="flex gap-2 justify-end">
+        <button onclick="cerrarModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">Cancelar</button>
+        <button onclick="guardarActualizacion()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-gray-600 text-gray-200 text-center py-6 mt-10 text-sm">
+    <div class="max-w-4xl mx-auto px-4 flex flex-col items-center space-y-2">
+      <p>© 2025 <strong>GEOWAY</strong>, Technology-Based Initiative – IBT. All rights reserved.</p>
+      <a href="https://geo-way.github.io/GeoWay.io/index.html" target="_blank">
+        <img src="https://geo-way.github.io/GeoWay.io/images/Logo5.png" alt="GEOWAY Logo" class="h-8 invert">
+      </a>
+    </div>
+  </footer>
+
+<script>
+const API_BASE = "https://gsmio-production-3b4c.up.railway.app";
+document.getElementById("nombreRol").innerText = rolUsuario;
+document.getElementById("menuToggle").addEventListener("click", () => {
+  document.getElementById("mobileMenu").classList.toggle("hidden");
+});
+
+let todasOrdenes = [];
+
+async function cargarOrdenes() {
+  try {
+    const res = await fetch(`${API_BASE}/api/ordenes_compra`);
+    todasOrdenes = await res.json();
+    actualizarContadores(todasOrdenes);
+    renderOrdenes(todasOrdenes);
+  } catch (err) {
+    document.getElementById("tablaOrdenes").innerHTML = `<p class="text-red-400 text-center py-6">Error al cargar órdenes.</p>`;
+  }
+}
+
+function actualizarContadores(ordenes) {
+  document.getElementById("cntPendiente").textContent = ordenes.filter(o => o.estado === "pendiente").length;
+  document.getElementById("cntEnProceso").textContent = ordenes.filter(o => o.estado === "en_proceso").length;
+  document.getElementById("cntCompletada").textContent = ordenes.filter(o => o.estado === "completada").length;
+}
+
+function estadoBadge(estado) {
+  const map = {
+    pendiente: "bg-red-100 text-red-700",
+    en_proceso: "bg-yellow-100 text-yellow-700",
+    completada: "bg-green-100 text-green-700"
+  };
+  const labels = { pendiente: "🔴 Pendiente", en_proceso: "🟡 En proceso", completada: "🟢 Completada" };
+  return `<span class="px-2 py-1 rounded-full text-xs font-semibold ${map[estado] || 'bg-gray-100 text-gray-600'}">${labels[estado] || estado}</span>`;
+}
+
+function renderOrdenes(ordenes) {
+  if (!ordenes || ordenes.length === 0) {
+    document.getElementById("tablaOrdenes").innerHTML = `<p class="text-gray-400 text-center py-8">No hay órdenes de compra.</p>`;
+    return;
+  }
+  document.getElementById("tablaOrdenes").innerHTML = `
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="p-3 text-left">#</th>
+          <th class="p-3 text-left">Máquina</th>
+          <th class="p-3 text-left">Pieza requerida</th>
+          <th class="p-3 text-center">Cant.</th>
+          <th class="p-3 text-left">Ítem origen</th>
+          <th class="p-3 text-left">Técnico</th>
+          <th class="p-3 text-left">Fecha</th>
+          <th class="p-3 text-center">Estado</th>
+          <th class="p-3 text-left">Observación</th>
+          ${rolUsuario === "admin" ? '<th class="p-3 text-center">Acción</th>' : ""}
+        </tr>
+      </thead>
+      <tbody>
+        ${ordenes.map(o => `
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-3 text-gray-400">${o.id}</td>
+            <td class="p-3 font-medium">${o.maquina || ""}</td>
+            <td class="p-3 font-semibold text-red-700">${o.pieza || ""}</td>
+            <td class="p-3 text-center">${o.cantidad || 1}</td>
+            <td class="p-3 text-xs text-gray-500">${o.item_origen || ""}</td>
+            <td class="p-3">${o.tecnico || ""}</td>
+            <td class="p-3 text-xs">${o.created_at ? new Date(o.created_at).toLocaleDateString("es-ES") : ""}</td>
+            <td class="p-3 text-center">${estadoBadge(o.estado)}</td>
+            <td class="p-3 text-xs text-gray-500">${o.observacion || "—"}</td>
+            ${rolUsuario === "admin" ? `
+            <td class="p-3 text-center flex gap-1 justify-center">
+              <button onclick="abrirModal(${o.id}, '${o.estado}', \`${(o.observacion||"").replace(/`/g,"'")}\`)" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded">✏️</button>
+              <button onclick="eliminarOrden(${o.id})" class="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 rounded">🗑️</button>
+            </td>` : ""}
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+function filtrarOrdenes() {
+  const estado = document.getElementById("filtroEstado").value;
+  const busq = document.getElementById("filtroBusqueda").value.toLowerCase();
+  const filtradas = todasOrdenes.filter(o => {
+    const matchEstado = !estado || o.estado === estado;
+    const matchBusq = !busq || (o.maquina||"").toLowerCase().includes(busq) || (o.pieza||"").toLowerCase().includes(busq);
+    return matchEstado && matchBusq;
+  });
+  actualizarContadores(todasOrdenes);
+  renderOrdenes(filtradas);
+}
+
+function abrirModal(id, estado, obs) {
+  document.getElementById("obsOrdenId").value = id;
+  document.getElementById("obsEstado").value = estado;
+  document.getElementById("obsTexto").value = obs;
+  document.getElementById("modalObs").classList.remove("hidden");
+}
+
+function cerrarModal() {
+  document.getElementById("modalObs").classList.add("hidden");
+}
+
+async function guardarActualizacion() {
+  const id = document.getElementById("obsOrdenId").value;
+  const estado = document.getElementById("obsEstado").value;
+  const observacion = document.getElementById("obsTexto").value.trim();
+  try {
+    const res = await fetch(`${API_BASE}/api/ordenes_compra/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ estado, observacion })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    cerrarModal();
+    cargarOrdenes();
+  } catch (err) {
+    alert("❌ Error al actualizar: " + err.message);
+  }
+}
+
+async function eliminarOrden(id) {
+  if (!confirm("¿Eliminar esta orden de compra?")) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/ordenes_compra/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error(await res.text());
+    cargarOrdenes();
+  } catch (err) {
+    alert("❌ Error al eliminar: " + err.message);
+  }
+}
+
+window.onload = cargarOrdenes;
+</script>
+</body>
+</html>
