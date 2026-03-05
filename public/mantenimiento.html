@@ -196,6 +196,15 @@
 
     <script>
       document.getElementById("nombreRol").innerText = rolUsuario;
+      if (rolUsuario !== "admin") {
+       document.getElementById("btnGuardar").style.display = "none";
+       document.getElementById("btnNuevo").style.display = "none";
+  setTimeout(() => {
+    document.querySelectorAll("#hojaMantenimiento input, #hojaMantenimiento textarea, #hojaMantenimiento select").forEach(el => {
+      el.setAttribute("disabled", true);
+    });
+  }, 200);
+}
       if (rolUsuario === "viewer") {
         const btnGuardar = document.getElementById("btnGuardar");
         if (btnGuardar) btnGuardar.style.display = "none";
