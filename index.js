@@ -106,10 +106,7 @@ app.post('/api/mantenimiento', upload.single('fotoman'), async (req, res) => {
       : '{}';
     let fotoman = null;
     if (req.file) {
-      const nombreLimpio = req.file.originalname
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-zA-Z0-9._-]/g, "_");
-      const filename = `${Date.now()}_${nombreLimpio}`;
+      const filename = `${Date.now()}_${req.file.originalname}`;
       const { error } = await supabase.storage.from('fotosmantenimiento').upload(filename, req.file.buffer, { contentType: req.file.mimetype });
       if (error) throw new Error('Error al subir imagen: ' + error.message);
       const { data } = supabase.storage.from('fotosmantenimiento').getPublicUrl(filename);
@@ -136,10 +133,7 @@ app.put('/api/mantenimiento/:id', upload.single('fotoman'), async (req, res) => 
       : '{}';
     let fotoman = null;
     if (req.file) {
-      const nombreLimpio = req.file.originalname
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-zA-Z0-9._-]/g, "_");
-      const filename = `${Date.now()}_${nombreLimpio}`;
+      const filename = `${Date.now()}_${req.file.originalname}`;
       const { error } = await supabase.storage.from('fotosmantenimiento').upload(filename, req.file.buffer, { contentType: req.file.mimetype });
       if (error) throw new Error('Error al subir imagen: ' + error.message);
       const { data } = supabase.storage.from('fotosmantenimiento').getPublicUrl(filename);
@@ -242,10 +236,7 @@ app.post('/api/maquinas/:id/documentos', upload.single('documento'), async (req,
     const { id } = req.params;
     const { titulo, tipo } = req.body;
     if (!req.file) return res.status(400).json({ error: 'No se recibió ningún archivo' });
-    const nombreLimpio = req.file.originalname
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9._-]/g, "_");
-    const filename = `${Date.now()}_${nombreLimpio}`;
+    const filename = `${Date.now()}_${req.file.originalname}`;
     const { error } = await supabase.storage.from('documentos-seguridad').upload(filename, req.file.buffer, { contentType: 'application/pdf' });
     if (error) throw new Error('Error al subir PDF: ' + error.message);
     const { data } = supabase.storage.from('documentos-seguridad').getPublicUrl(filename);
@@ -361,23 +352,36 @@ app.delete('/api/hojas_mantenimiento/:id', async (req, res) => {
 
 app.get('/api/ordenes_compra', async (req, res) => {
   try {
-    const { hoja_id } = req.query;
-    const result = hoja_id
-      ? await pool.query('SELECT * FROM ordenes_compra WHERE hoja_id=$1 ORDER BY created_at DESC', [hoja_id])
-      : await pool.query('SELECT * FROM ordenes_compra ORDER BY created_at DESC');
+    const result = await pool.query('SELECT * FROM ordenes_compra ORDER BY created_at DESC');
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener órdenes', detalle: error.message });
   }
 });
 
+app.post('/api/ordenes_compra', async (req, res) => {
+  try {
+    const { maquina, pieza, cantidad, solicitante, observacion, tipo } = req.body;
+    if (!pieza) return res.status(400).json({ error: 'La pieza es obligatoria' });
+    const result = await pool.query(
+      `INSERT INTO ordenes_compra (maquina, pieza, cantidad, solicitante, observacion, tipo, estado)
+       VALUES ($1,$2,$3,$4,$5,$6,'pendiente') RETURNING *;`,
+      [maquina || null, pieza, cantidad || 1, solicitante || null, observacion || null, tipo || 'manual']
+    );
+    res.status(201).json({ message: 'Orden creada correctamente', item: result.rows[0] });
+  } catch (error) {
+    console.error('Error al crear orden:', error);
+    res.status(500).json({ error: 'Error al crear orden', detalle: error.message });
+  }
+});
+
 app.put('/api/ordenes_compra/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { estado, observacion } = req.body;
+    const { estado, observacion, inventario_id } = req.body;
     const result = await pool.query(
-      `UPDATE ordenes_compra SET estado=$1, observacion=$2 WHERE id=$3 RETURNING *;`,
-      [estado, observacion || null, id]
+      `UPDATE ordenes_compra SET estado=$1, observacion=$2, inventario_id=$3 WHERE id=$4 RETURNING *;`,
+      [estado, observacion || null, inventario_id || null, id]
     );
     res.json({ message: 'Orden actualizada correctamente', item: result.rows[0] });
   } catch (error) {
@@ -392,6 +396,25 @@ app.delete('/api/ordenes_compra/:id', async (req, res) => {
     res.json({ message: 'Orden eliminada correctamente' });
   } catch (error) {
     res.status(500).json({ error: 'Error al eliminar orden', detalle: error.message });
+  }
+});
+
+// ------------------ STOCK ------------------ //
+
+app.put('/api/inventario/:id/sumar_stock', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { cantidad } = req.body;
+    if (!cantidad || cantidad <= 0) return res.status(400).json({ error: 'Cantidad inválida' });
+    const result = await pool.query(
+      `UPDATE inventario SET cantidad = cantidad + $1 WHERE id=$2 RETURNING *;`,
+      [cantidad, id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Artículo no encontrado' });
+    res.json({ message: 'Stock actualizado correctamente', item: result.rows[0] });
+  } catch (error) {
+    console.error('Error al actualizar stock:', error);
+    res.status(500).json({ error: 'Error al actualizar stock', detalle: error.message });
   }
 });
 
