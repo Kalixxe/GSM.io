@@ -75,6 +75,7 @@
     </select>
     <input class="p-2 border rounded" name="familia" placeholder="Familia" type="text"/>
     <input class="p-2 border rounded" name="codigobarras" placeholder="Código de barras" type="text"/>
+    <input class="p-2 border rounded" name="stock_minimo" placeholder="Stock mínimo (alerta)" type="number" min="0"/>
     <button class="col-span-full bg-red-600 text-white p-2 rounded hover:bg-red-700" type="submit">Guardar</button>
   </form>
 
@@ -91,6 +92,14 @@
     <div class="mt-4 flex justify-end gap-2">
       <button class="bg-blue-600 text-white px-4 py-2 rounded" onclick="filtrarInventario()">Filtrar</button>
       <button class="bg-gray-300 px-4 py-2 rounded" onclick="limpiarFiltros()">Limpiar</button>
+    </div>
+  </div>
+
+  <!-- ===================== ALERTAS STOCK ===================== -->
+  <div id="alertasStock" class="mb-4 hidden">
+    <div class="bg-red-50 border border-red-300 rounded-lg p-4">
+      <h3 class="text-red-700 font-bold mb-2">⚠️ Artículos con stock bajo</h3>
+      <div id="listaAlertas" class="space-y-2"></div>
     </div>
   </div>
 
@@ -114,6 +123,7 @@
           <th class="p-2">Estado</th>
           <th class="p-2">Familia</th>
           <th class="p-2">Código</th>
+          <th class="p-2">Stock mín.</th>
           <th class="p-2">Editar</th>
           <th class="p-2">Eliminar</th>
         </tr>
@@ -144,6 +154,7 @@
           </select>
           <input class="p-2 border rounded" name="familia" placeholder="Familia" type="text"/>
           <input class="p-2 border rounded" name="codigobarras" placeholder="Código de barras" type="text"/>
+          <input class="p-2 border rounded" name="stock_minimo" placeholder="Stock mínimo (alerta)" type="number" min="0"/>
         </div>
         <div class="flex justify-end mt-4">
           <button type="button" class="text-gray-600 mr-4" onclick="cerrarModal()">Cancelar</button>
@@ -172,24 +183,72 @@
       cuerpo.innerHTML = "";
       data.forEach(item => {
         const fila = document.createElement("tr");
+        const stockBajo = item.stock_minimo > 0 && item.cantidad <= item.stock_minimo;
+        if (stockBajo) fila.classList.add("bg-red-50");
         fila.innerHTML = `
-          <td>${item.nombre}</td>
+          <td class="${stockBajo ? 'font-bold text-red-700' : ''}">${item.nombre}</td>
           <td>${item.proveedor}</td>
-          <td>${item.cantidad}</td>
+          <td class="${stockBajo ? 'font-bold text-red-600' : ''}">${item.cantidad} ${stockBajo ? '⚠️' : ''}</td>
           <td>${item.precio}</td>
-          <td>${item.fecha}</td>
+          <td>${item.fecha ? item.fecha.split('T')[0] : ''}</td>
           <td>${item.vidautil}</td>
           <td>${item.ubicacion}</td>
           <td>${item.estado}</td>
           <td>${item.familia || ""}</td>
           <td>${item.codigobarras || ""}</td>
+          <td class="text-center">${item.stock_minimo || 0}</td>
           <td class="text-center">${roleUsuario==='admin'?`<button onclick="abrirModalEdicion(${item.id},this)">✏️</button>`:''}</td>
           <td class="text-center">${roleUsuario==='admin'?`<button onclick="eliminarArticulo(${item.id})">🗑️</button>`:''}</td>
         `;
         cuerpo.appendChild(fila);
       });
+      // Alertas stock bajo
+      const bajos = data.filter(i => i.stock_minimo > 0 && i.cantidad <= i.stock_minimo);
+      const alertasDiv = document.getElementById("alertasStock");
+      const listaAlertas = document.getElementById("listaAlertas");
+      if (bajos.length > 0) {
+        alertasDiv.classList.remove("hidden");
+        listaAlertas.innerHTML = bajos.map(i => `
+          <div class="flex items-center justify-between bg-white border border-red-200 rounded p-2">
+            <div class="flex items-center gap-3">
+              <span class="text-red-500">⚠️</span>
+              <span class="font-semibold">${i.nombre}</span>
+              <span class="text-sm text-red-600">Stock actual: <strong>${i.cantidad}</strong> / Mínimo: ${i.stock_minimo}</span>
+            </div>
+            ${roleUsuario === 'admin' ? `<button onclick="crearOrdenDesdeAlerta('${i.nombre.replace(/'/g,"\'")}', ${i.id})" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded">📦 Crear Orden</button>` : ''}
+          </div>
+        `).join("");
+      } else {
+        alertasDiv.classList.add("hidden");
+      }
     } catch(err) {
       console.error("Error al cargar inventario:",err);
+    }
+  }
+
+  async function crearOrdenDesdeAlerta(nombrePieza, inventarioId) {
+    const solicitante = prompt("¿Quién solicita esta orden?", "");
+    if (!solicitante) return;
+    const cantidad = prompt("¿Cuántas unidades necesitas?", "1");
+    if (!cantidad) return;
+    try {
+      const res = await fetch("https://gsmio-production-3b4c.up.railway.app/api/ordenes_compra", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pieza: nombrePieza,
+          cantidad: parseInt(cantidad),
+          solicitante,
+          maquina: "General",
+          observacion: "Generada por alerta de stock mínimo",
+          tipo: "manual",
+          inventario_id: inventarioId
+        })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      alert("✅ Orden de compra creada correctamente.");
+    } catch(err) {
+      alert("❌ Error al crear orden: " + err.message);
     }
   }
 
@@ -249,6 +308,7 @@
     form.estado.value=fila[7].innerText;
     form.familia.value=fila[8].innerText;
     form.codigobarras.value=fila[9].innerText;
+    form.stock_minimo.value=fila[10].innerText || 0;
     document.getElementById("modalEditar").classList.remove("hidden");
   }
 
