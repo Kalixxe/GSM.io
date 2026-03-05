@@ -361,7 +361,10 @@ app.delete('/api/hojas_mantenimiento/:id', async (req, res) => {
 
 app.get('/api/ordenes_compra', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM ordenes_compra ORDER BY created_at DESC');
+    const { hoja_id } = req.query;
+    const result = hoja_id
+      ? await pool.query('SELECT * FROM ordenes_compra WHERE hoja_id=$1 ORDER BY created_at DESC', [hoja_id])
+      : await pool.query('SELECT * FROM ordenes_compra ORDER BY created_at DESC');
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener órdenes', detalle: error.message });
