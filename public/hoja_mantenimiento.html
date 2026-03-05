@@ -656,27 +656,26 @@ async function cargarHoja(id) {
         });
         if (contRepuestos === 0) agregarRepuesto();
       }
-      // Cargar órdenes de compra generadas
-const resOrdenes = await fetch(`${API_BASE}/api/ordenes_compra?hoja_id=${id}`);
-const ordenes = await resOrdenes.json();
-if (ordenes && ordenes.length > 0) {
-  const divOrdenes = document.getElementById("seccionOrdenes");
-  if (divOrdenes) {
-    divOrdenes.classList.remove("hidden");
-    document.getElementById("listaOrdenes").innerHTML = ordenes.map(o => `
-      <div class="flex items-center gap-3 bg-yellow-50 border border-yellow-300 rounded p-2 text-sm">
-        <span class="text-yellow-600">⚠️</span>
-        <span class="font-semibold">${o.pieza}</span>
-        <span class="text-gray-500">— Cantidad: ${o.cantidad}</span>
-        <span class="text-gray-400 text-xs">(${o.item_origen})</span>
-        <span class="ml-auto text-xs px-2 py-1 rounded-full ${o.estado === 'completada' ? 'bg-green-100 text-green-700' : o.estado === 'en_proceso' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}">${o.estado}</span>
-      </div>
-    `).join("");
-  }
-}
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }, 100);
-  } catch (err) {
+    // Cargar órdenes de compra generadas
+    const resOrdenes = await fetch(`${API_BASE}/api/ordenes_compra?hoja_id=${id}`);
+    const ordenes = await resOrdenes.json();
+    if (ordenes && ordenes.length > 0) {
+      const divOrdenes = document.getElementById("seccionOrdenes");
+      if (divOrdenes) {
+        divOrdenes.classList.remove("hidden");
+        document.getElementById("listaOrdenes").innerHTML = ordenes.map(o => `
+          <div class="flex items-center gap-3 bg-yellow-50 border border-yellow-300 rounded p-2 text-sm">
+            <span class="text-yellow-600">⚠️</span>
+            <span class="font-semibold">${o.pieza}</span>
+            <span class="text-gray-500">— Cantidad: ${o.cantidad}</span>
+            <span class="text-gray-400 text-xs">(${o.item_origen})</span>
+            <span class="ml-auto text-xs px-2 py-1 rounded-full ${o.estado === 'completada' ? 'bg-green-100 text-green-700' : o.estado === 'en_proceso' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}">${o.estado}</span>
+          </div>
+        `).join("");
+      }
+    }
+  } 
+               catch (err) {
     alert("❌ Error al cargar hoja: " + err.message);
   }
 }
