@@ -42,14 +42,14 @@ app.get('/api/inventario', async (req, res) => {
 
 app.post('/api/inventario', async (req, res) => {
   try {
-    const { nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia, codigobarras } = req.body;
+    const { nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia, codigobarras, stock_minimo } = req.body;
     if (!nombre || !proveedor || !cantidad || !precio || !fecha || !vidautil || !ubicacion || !estado) {
       return res.status(400).json({ error: 'Faltan campos obligatorios' });
     }
     const result = await pool.query(
-      `INSERT INTO inventario (nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia, codigobarras)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *;`,
-      [nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia || null, codigobarras || null]
+      `INSERT INTO inventario (nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia, codigobarras, stock_minimo)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *;`,
+      [nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia || null, codigobarras || null, stock_minimo || 0]
     );
     res.status(201).json({ message: 'Artículo guardado correctamente', item: result.rows[0] });
   } catch (error) {
@@ -61,12 +61,12 @@ app.post('/api/inventario', async (req, res) => {
 app.put('/api/inventario/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia, codigobarras } = req.body;
+    const { nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia, codigobarras, stock_minimo } = req.body;
     const result = await pool.query(
       `UPDATE inventario SET nombre=$1, proveedor=$2, cantidad=$3, precio=$4, fecha=$5,
-       vidautil=$6, ubicacion=$7, estado=$8, familia=$9, codigobarras=$10
-       WHERE id=$11 RETURNING *;`,
-      [nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia || null, codigobarras || null, id]
+       vidautil=$6, ubicacion=$7, estado=$8, familia=$9, codigobarras=$10, stock_minimo=$11
+       WHERE id=$12 RETURNING *;`,
+      [nombre, proveedor, cantidad, precio, fecha, vidautil, ubicacion, estado, familia || null, codigobarras || null, stock_minimo || 0, id]
     );
     res.json({ message: 'Artículo actualizado correctamente', item: result.rows[0] });
   } catch (error) {
