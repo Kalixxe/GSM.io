@@ -567,7 +567,7 @@ function renderHistorial(datos) {
       <tbody>
         ${datos.map(h => `
           <tr class="border-b hover:bg-gray-50">
-            <td class="p-2">${h.fecha_ejecucion || ""}</td>
+            <td class="p-2">${h.fecha_ejecucion ? h.fecha_ejecucion.split('T')[0] : ""}</td>
             <td class="p-2">${h.nombre_maquina || ""}</td>
             <td class="p-2">${h.tecnico || ""}</td>
             <td class="p-2">${h.tipo_mantenimiento || ""}</td>
