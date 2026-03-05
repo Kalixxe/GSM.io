@@ -418,6 +418,45 @@ app.put('/api/inventario/:id/sumar_stock', async (req, res) => {
   }
 });
 
+
+// ------------------ MANUALES ------------------ //
+
+app.get('/api/manuales', async (req, res) => {
+  try {
+    const { maquina } = req.query;
+    const result = maquina
+      ? await pool.query('SELECT * FROM manuales WHERE maquina_nombre=$1 ORDER BY orden ASC, created_at ASC', [maquina])
+      : await pool.query('SELECT * FROM manuales ORDER BY maquina_nombre ASC, orden ASC');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener manuales', detalle: error.message });
+  }
+});
+
+app.post('/api/manuales', async (req, res) => {
+  try {
+    const { maquina_nombre, titulo, url, orden } = req.body;
+    if (!maquina_nombre || !titulo || !url) return res.status(400).json({ error: 'Faltan campos obligatorios' });
+    const result = await pool.query(
+      `INSERT INTO manuales (maquina_nombre, titulo, url, orden) VALUES ($1,$2,$3,$4) RETURNING *;`,
+      [maquina_nombre, titulo, url, orden || 0]
+    );
+    res.status(201).json({ message: 'Manual guardado correctamente', item: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al guardar manual', detalle: error.message });
+  }
+});
+
+app.delete('/api/manuales/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM manuales WHERE id=$1', [id]);
+    res.json({ message: 'Manual eliminado correctamente' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al eliminar manual', detalle: error.message });
+  }
+});
+
 // ------------------ ARCHIVOS ESTÁTICOS ------------------ //
 app.use(express.static(path.join(__dirname, 'public')));
 
