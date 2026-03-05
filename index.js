@@ -106,7 +106,10 @@ app.post('/api/mantenimiento', upload.single('fotoman'), async (req, res) => {
       : '{}';
     let fotoman = null;
     if (req.file) {
-      const filename = `${Date.now()}_${req.file.originalname}`;
+      const nombreLimpio = req.file.originalname
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9._-]/g, "_");
+      const filename = `${Date.now()}_${nombreLimpio}`;
       const { error } = await supabase.storage.from('fotosmantenimiento').upload(filename, req.file.buffer, { contentType: req.file.mimetype });
       if (error) throw new Error('Error al subir imagen: ' + error.message);
       const { data } = supabase.storage.from('fotosmantenimiento').getPublicUrl(filename);
@@ -133,7 +136,10 @@ app.put('/api/mantenimiento/:id', upload.single('fotoman'), async (req, res) => 
       : '{}';
     let fotoman = null;
     if (req.file) {
-      const filename = `${Date.now()}_${req.file.originalname}`;
+      const nombreLimpio = req.file.originalname
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9._-]/g, "_");
+      const filename = `${Date.now()}_${nombreLimpio}`;
       const { error } = await supabase.storage.from('fotosmantenimiento').upload(filename, req.file.buffer, { contentType: req.file.mimetype });
       if (error) throw new Error('Error al subir imagen: ' + error.message);
       const { data } = supabase.storage.from('fotosmantenimiento').getPublicUrl(filename);
@@ -236,7 +242,10 @@ app.post('/api/maquinas/:id/documentos', upload.single('documento'), async (req,
     const { id } = req.params;
     const { titulo, tipo } = req.body;
     if (!req.file) return res.status(400).json({ error: 'No se recibió ningún archivo' });
-    const filename = `${Date.now()}_${req.file.originalname}`;
+    const nombreLimpio = req.file.originalname
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._-]/g, "_");
+    const filename = `${Date.now()}_${nombreLimpio}`;
     const { error } = await supabase.storage.from('documentos-seguridad').upload(filename, req.file.buffer, { contentType: 'application/pdf' });
     if (error) throw new Error('Error al subir PDF: ' + error.message);
     const { data } = supabase.storage.from('documentos-seguridad').getPublicUrl(filename);
