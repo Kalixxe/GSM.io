@@ -320,6 +320,7 @@
     if(!validarFormulario(form)) return;
     const datos=Object.fromEntries(new FormData(form).entries());
     const id=datos.id; delete datos.id;
+    datos.stock_minimo = datos.stock_minimo || 0;
     try{
       const res=await fetch(`https://gsmio-production-3b4c.up.railway.app/api/inventario/${id}`,{
         method:'PUT',
