@@ -181,10 +181,11 @@
       </section>
 
       <!-- Órdenes generadas -->
-<div id="seccionOrdenes" class="mb-6 hidden">
-  <h2 class="text-base font-bold bg-yellow-500 text-white px-3 py-1 rounded mb-3">⚠️ PIEZAS REQUERIDAS EN ESTA INSPECCIÓN</h2>
-  <div id="listaOrdenes" class="space-y-2"></div>
-</div>
+      <div id="seccionOrdenes" class="mb-6 hidden">
+        <h2 class="text-base font-bold bg-yellow-500 text-white px-3 py-1 rounded mb-3">⚠️ PIEZAS REQUERIDAS EN ESTA INSPECCIÓN</h2>
+        <div id="listaOrdenes" class="space-y-2"></div>
+      </div>
+
       <!-- 6. Observaciones -->
       <section class="mb-6" id="seccionObservaciones" style="display:none">
         <h2 class="text-base font-bold bg-red-600 text-white px-3 py-1 rounded mb-3">6. OBSERVACIONES GENERALES</h2>
@@ -245,6 +246,16 @@
 <script>
 const API_BASE = "https://gsmio-production-3b4c.up.railway.app";
 document.getElementById("nombreRol").innerText = rolUsuario;
+
+if (rolUsuario !== "admin") {
+  document.getElementById("btnGuardar").style.display = "none";
+  document.getElementById("btnNuevo").style.display = "none";
+  setTimeout(() => {
+    document.querySelectorAll("#hojaMantenimiento input, #hojaMantenimiento textarea, #hojaMantenimiento select").forEach(el => {
+      el.setAttribute("disabled", true);
+    });
+  }, 200);
+}
 document.getElementById("menuToggle").addEventListener("click", () => {
   document.getElementById("mobileMenu").classList.toggle("hidden");
 });
@@ -603,7 +614,7 @@ async function cargarHoja(id) {
     setTimeout(() => {
       document.getElementById("responsable").value = h.responsable || "";
       document.getElementById("mesAnio").value = h.mes_anio || "";
-      document.getElementById("fechaEjecucion").value = h.fecha_ejecucion ? h.fecha_ejecucion.split('T')[0] : "";
+      document.getElementById("fechaEjecucion").value = h.fecha_ejecucion ? h.fecha_ejecucion.split("T")[0] : "";
       document.getElementById("horaInicio").value = h.hora_inicio || "";
       document.getElementById("horaFin").value = h.hora_fin || "";
       document.getElementById("tecnico").value = h.tecnico || "";
@@ -611,7 +622,7 @@ async function cargarHoja(id) {
       document.getElementById("observaciones").value = h.observaciones || "";
       document.getElementById("firmaTecnico").value = h.firma_tecnico || "";
       document.getElementById("firmaSupervisor").value = h.firma_supervisor || "";
-      document.getElementById("fechaFirma").value = h.fecha_firma ? h.fecha_firma.split('T')[0] : "";
+      document.getElementById("fechaFirma").value = h.fecha_firma ? h.fecha_firma.split("T")[0] : "";
 
       if (h.frecuencia) {
         const r = document.querySelector(`input[name="frecuencia"][value="${h.frecuencia}"]`);
@@ -654,53 +665,34 @@ async function cargarHoja(id) {
           document.getElementById(`repNombre_${contRepuestos}`).value = r.nombre || "";
           document.getElementById(`repCantidad_${contRepuestos}`).value = r.cantidad || "";
         });
-       if (contRepuestos === 0) agregarRepuesto();
+        if (contRepuestos === 0) agregarRepuesto();
       }
       window.scrollTo({ top: 0, behavior: "smooth" });
     }, 100);
 
+    // Cargar órdenes de compra generadas
     const resOrdenes = await fetch(`${API_BASE}/api/ordenes_compra?hoja_id=${id}`);
     const ordenes = await resOrdenes.json();
-    if (ordenes && ordenes.length > 0) {
-      const divOrdenes = document.getElementById("seccionOrdenes");
-      if (divOrdenes) {
+    const divOrdenes = document.getElementById("seccionOrdenes");
+    if (divOrdenes) {
+      if (ordenes && ordenes.length > 0) {
         divOrdenes.classList.remove("hidden");
-        document.getElementById("listaOrdenes").innerHTML = ordenes.map(o => `
-          <div class="flex items-center gap-3 bg-yellow-50 border border-yellow-300 rounded p-2 text-sm">
+        document.getElementById("listaOrdenes").innerHTML = ordenes.map(o => {
+          const estadoClass = o.estado === "completada" ? "bg-green-100 text-green-700" : o.estado === "en_proceso" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700";
+          return `<div class="flex items-center gap-3 bg-yellow-50 border border-yellow-300 rounded p-2 text-sm flex-wrap">
             <span class="text-yellow-600">⚠️</span>
             <span class="font-semibold">${o.pieza}</span>
             <span class="text-gray-500">— Cantidad: ${o.cantidad}</span>
-            <span class="text-gray-400 text-xs">(${o.item_origen})</span>
-            <span class="ml-auto text-xs px-2 py-1 rounded-full ${o.estado === 'completada' ? 'bg-green-100 text-green-700' : o.estado === 'en_proceso' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}">${o.estado}</span>
-          </div>
-        `).join("");
+            <span class="text-gray-400 text-xs">(${o.item_origen || ""})</span>
+            <span class="ml-auto text-xs px-2 py-1 rounded-full ${estadoClass}">${o.estado}</span>
+          </div>`;
+        }).join("");
+      } else {
+        divOrdenes.classList.add("hidden");
       }
     }
 
   } catch (err) {
-    alert("❌ Error al cargar hoja: " + err.message);
-  }
-}
-    // Cargar órdenes de compra generadas
-    const resOrdenes = await fetch(`${API_BASE}/api/ordenes_compra?hoja_id=${id}`);
-    const ordenes = await resOrdenes.json();
-    if (ordenes && ordenes.length > 0) {
-      const divOrdenes = document.getElementById("seccionOrdenes");
-      if (divOrdenes) {
-        divOrdenes.classList.remove("hidden");
-        document.getElementById("listaOrdenes").innerHTML = ordenes.map(o => `
-          <div class="flex items-center gap-3 bg-yellow-50 border border-yellow-300 rounded p-2 text-sm">
-            <span class="text-yellow-600">⚠️</span>
-            <span class="font-semibold">${o.pieza}</span>
-            <span class="text-gray-500">— Cantidad: ${o.cantidad}</span>
-            <span class="text-gray-400 text-xs">(${o.item_origen})</span>
-            <span class="ml-auto text-xs px-2 py-1 rounded-full ${o.estado === 'completada' ? 'bg-green-100 text-green-700' : o.estado === 'en_proceso' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}">${o.estado}</span>
-          </div>
-        `).join("");
-      }
-    }
-  } 
-               catch (err) {
     alert("❌ Error al cargar hoja: " + err.message);
   }
 }
