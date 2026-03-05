@@ -2,402 +2,425 @@
 <html lang="es">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Inventario</title>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Órdenes de Compra</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* Estilos para impresión */
-    @media print {
-      body * { visibility: hidden; }
-      #tablaInventario, #tablaInventario * { visibility: visible; }
-      #tablaInventario { position: absolute; left: 0; top: 0; }
-      th { background-color: #cc0000 !important; color: #fff !important; padding: 8px; }
-      td { padding: 6px; }
-      body { font-size: 12px; color: #000; }
+  <script>
+    const rolUsuario = localStorage.getItem("role") || "viewer";
+    if (!localStorage.getItem("loggedIn")) {
+      alert("Debes iniciar sesión para acceder.");
+      window.location.href = "index.html";
     }
-  </style>
+  </script>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gray-100 text-gray-900">
 
-<header class="bg-white shadow-md sticky top-0 z-50">
-  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-    <a href="index.html" class="flex items-center space-x-2">
-      <img src="https://images.squarespace-cdn.com/content/v1/58a36221d482e9bca4af6eac/34694fc3-6f92-4054-8a58-3776436c00dc/IMG_9869+2.PNG?format=2500w" alt="Logo" class="h-10 w-auto"/>
-      <span class="text-xl font-bold text-red-600">SIMio</span>
-      <span id="rolVisual" class="text-sm text-gray-500 italic ml-4">(Rol: <span id="nombreRol">cargando...</span>)</span>
-    </a>
-    <nav class="hidden md:flex space-x-6 text-sm font-medium">
-      <a href="index.html" class="text-gray-700 hover:text-red-600">Home</a>
-      <a href="inventario.html" class="text-red-600 font-bold">Inventario</a>
-      <a href="mantenimiento.html" class="text-gray-700 hover:text-red-600">Mantenimiento</a>
-      <a href="seguridad.html" class="text-gray-700 hover:text-red-600">Seguridad</a>
-      <a href="hoja_mantenimiento.html" class="text-gray-700 hover:text-red-600">Hoja Mant.</a>
-      <a href="ordenes.html" class="text-gray-700 hover:text-red-600">Órdenes</a>
-       <a href="maquinas.html" class="text-gray-700 hover:text-red-600">Diagrama de Máquinas</a>
-      <a href="info.html" class="text-gray-500 hover:text-red-600">ℹ️</a>
-    </nav>
-    <button id="menuToggle" class="md:hidden text-gray-700 focus:outline-none">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-        viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
-    </button>
-  </div>
-  <div id="mobileMenu" class="md:hidden hidden px-4 pb-4">
-    <a href="index.html" class="block py-2 text-gray-700 hover:text-red-600">Home</a>
-    <a href="inventario.html" class="block py-2 text-red-600 font-bold">Inventario</a>
-    <a href="mantenimiento.html" class="block py-2 text-gray-700 hover:text-red-600">Mantenimiento</a>
-    <a href="seguridad.html" class="block py-2 text-gray-700 hover:text-red-600">Seguridad</a>
-    <a href="hoja_mantenimiento.html" class="text-gray-700 hover:text-red-600">Hoja Mant.</a>
-    <a href="ordenes.html" class="text-gray-700 hover:text-red-600">Órdenes</a>
-    <a href="maquinas.html" class="block py-2 text-gray-700 hover:text-red-600">Diagrama de Máquinas</a>
-    <a href="info.html" class="block py-2 text-gray-700 hover:text-red-600">ℹ️</a>
-  </div>
-</header>
-
-<main class="max-w-7xl mx-auto mt-10 p-4">
-  <!-- ===================== FORMULARIO AGREGAR ARTÍCULO ===================== -->
-  <h2 class="text-lg font-semibold mb-4">Agregar nuevo artículo</h2>
-  <form id="formInventario" class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-4 rounded shadow mb-6">
-    <input class="p-2 border rounded" name="nombre" placeholder="Nombre" required type="text"/>
-    <input class="p-2 border rounded" name="proveedor" placeholder="Proveedor" required type="text"/>
-    <input class="p-2 border rounded" name="cantidad" placeholder="Cantidad" required type="number"/>
-    <input class="p-2 border rounded" name="precio" placeholder="Precio" required step="0.01" type="number"/>
-    <input class="p-2 border rounded" name="fecha" required type="date"/>
-    <input class="p-2 border rounded" name="vidautil" placeholder="Vida útil (años)" required type="text"/>
-    <input class="p-2 border rounded" name="ubicacion" placeholder="Ubicación" required type="text"/>
-    <select name="estado" required class="p-2 border rounded">
-      <option value="">Seleccione Estado</option>
-      <option value="nuevo">Nuevo</option>
-      <option value="usado">Usado</option>
-      <option value="semi-nuevo">Semi-nuevo</option>
-    </select>
-    <input class="p-2 border rounded" name="familia" placeholder="Familia" type="text"/>
-    <input class="p-2 border rounded" name="codigobarras" placeholder="Código de barras" type="text"/>
-    <input class="p-2 border rounded" name="stock_minimo" placeholder="Stock mínimo (alerta)" type="number" min="0"/>
-    <button class="col-span-full bg-red-600 text-white p-2 rounded hover:bg-red-700" type="submit">Guardar</button>
-  </form>
-
-  <!-- ===================== FILTROS ===================== -->
-  <div class="bg-white p-4 rounded shadow mb-4">
-    <h3 class="text-md font-semibold mb-2">Filtrar inventario</h3>
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-      <input class="p-2 border rounded w-full" id="filtroNombre" placeholder="Nombre" type="text"/>
-      <input class="p-2 border rounded w-full" id="filtroFamilia" placeholder="Familia" type="text"/>
-      <input class="p-2 border rounded w-full" id="filtroProveedor" placeholder="Proveedor" type="text"/>
-      <input class="p-2 border rounded w-full" id="filtroUbicacion" placeholder="Ubicación" type="text"/>
-      <input class="p-2 border rounded w-full" id="filtroFecha" type="date"/>
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="index.html" class="flex items-center space-x-2">
+        <img src="https://images.squarespace-cdn.com/content/v1/58a36221d482e9bca4af6eac/34694fc3-6f92-4054-8a58-3776436c00dc/IMG_9869+2.PNG?format=2500w" alt="Logo" class="h-10 w-auto" />
+        <span class="text-xl font-bold text-red-600">SIMio</span>
+        <span class="text-sm text-gray-500 italic ml-4">(Rol: <span id="nombreRol">...</span>)</span>
+      </a>
+      <nav class="hidden md:flex space-x-4 text-sm font-medium">
+        <a href="index.html" class="text-gray-700 hover:text-red-600">Home</a>
+        <a href="inventario.html" class="text-gray-700 hover:text-red-600">Inventario</a>
+        <a href="mantenimiento.html" class="text-gray-700 hover:text-red-600">Mantenimiento</a>
+        <a href="seguridad.html" class="text-gray-700 hover:text-red-600">Seguridad</a>
+        <a href="hoja_mantenimiento.html" class="text-gray-700 hover:text-red-600">Hoja Mant.</a>
+        <a href="ordenes.html" class="text-red-600 font-bold">Órdenes</a>
+        <a href="maquinas.html" class="text-gray-700 hover:text-red-600">Diagrama</a>
+        <a href="info.html" class="text-gray-500 hover:text-red-600">ℹ️</a>
+      </nav>
+      <button id="menuToggle" class="md:hidden text-gray-700">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
     </div>
-    <div class="mt-4 flex justify-end gap-2">
-      <button class="bg-blue-600 text-white px-4 py-2 rounded" onclick="filtrarInventario()">Filtrar</button>
-      <button class="bg-gray-300 px-4 py-2 rounded" onclick="limpiarFiltros()">Limpiar</button>
+    <div id="mobileMenu" class="md:hidden hidden px-4 pb-4">
+      <a href="index.html" class="block py-2 text-gray-700 hover:text-red-600">Home</a>
+      <a href="inventario.html" class="block py-2 text-gray-700 hover:text-red-600">Inventario</a>
+      <a href="mantenimiento.html" class="block py-2 text-gray-700 hover:text-red-600">Mantenimiento</a>
+      <a href="seguridad.html" class="block py-2 text-gray-700 hover:text-red-600">Seguridad</a>
+      <a href="hoja_mantenimiento.html" class="block py-2 text-gray-700 hover:text-red-600">Hoja Mant.</a>
+      <a href="ordenes.html" class="block py-2 text-red-600 font-bold">Órdenes</a>
+      <a href="maquinas.html" class="block py-2 text-gray-700 hover:text-red-600">Diagrama</a>
+      <a href="info.html" class="block py-2 text-gray-700 hover:text-red-600">ℹ️</a>
     </div>
-  </div>
+  </header>
 
-  <!-- ===================== ALERTAS STOCK ===================== -->
-  <div id="alertasStock" class="mb-4 hidden">
-    <div class="bg-red-50 border border-red-300 rounded-lg p-4">
-      <h3 class="text-red-700 font-bold mb-2">⚠️ Artículos con stock bajo</h3>
-      <div id="listaAlertas" class="space-y-2"></div>
+  <main class="max-w-6xl mx-auto mt-8 p-4">
+
+    <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+      <h1 class="text-2xl font-bold text-gray-800">📦 Órdenes de Compra</h1>
+      <div class="flex gap-3 flex-wrap items-center">
+        <select id="filtroEstado" class="p-2 border rounded text-sm" onchange="filtrarOrdenes()">
+          <option value="">Todos los estados</option>
+          <option value="pendiente">🔴 Pendiente</option>
+          <option value="en_proceso">🟡 En proceso</option>
+          <option value="completada">🟢 Completada</option>
+        </select>
+        <input id="filtroBusqueda" placeholder="🔍 Buscar..." class="p-2 border rounded text-sm w-48" oninput="filtrarOrdenes()" />
+        <button id="btnNuevaOrden" onclick="abrirModalNuevaOrden()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold text-sm">+ Nueva Orden</button>
+      </div>
     </div>
-  </div>
 
-  <!-- ===================== TABLA INVENTARIO ===================== -->
-  <h2 class="text-lg font-semibold my-6">Inventario actual</h2>
-  <div class="flex justify-start gap-2 mb-2">
-    <button id="btnImprimir" class="bg-green-600 text-white px-4 py-2 rounded">Imprimir PDF</button>
-    <button id="btnExportar" class="bg-yellow-500 text-white px-4 py-2 rounded">Exportar CSV</button>
-  </div>
-  <div class="overflow-x-auto bg-white p-4 rounded shadow">
-    <table class="min-w-full table-auto" id="tablaInventario">
-      <thead class="bg-gray-200 text-left">
-        <tr>
-          <th class="p-2">Nombre</th>
-          <th class="p-2">Proveedor</th>
-          <th class="p-2">Cantidad</th>
-          <th class="p-2">Precio</th>
-          <th class="p-2">Fecha</th>
-          <th class="p-2">Vida útil</th>
-          <th class="p-2">Ubicación</th>
-          <th class="p-2">Estado</th>
-          <th class="p-2">Familia</th>
-          <th class="p-2">Código</th>
-          <th class="p-2">Stock mín.</th>
-          <th class="p-2">Editar</th>
-          <th class="p-2">Eliminar</th>
-        </tr>
-      </thead>
-      <tbody class="text-sm" id="cuerpoTabla"></tbody>
-    </table>
-  </div>
+    <!-- Resumen -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+        <p class="text-3xl font-bold text-red-600" id="cntPendiente">0</p>
+        <p class="text-sm text-red-700 mt-1">🔴 Pendientes</p>
+      </div>
+      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+        <p class="text-3xl font-bold text-yellow-600" id="cntEnProceso">0</p>
+        <p class="text-sm text-yellow-700 mt-1">🟡 En proceso</p>
+      </div>
+      <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+        <p class="text-3xl font-bold text-green-600" id="cntCompletada">0</p>
+        <p class="text-sm text-green-700 mt-1">🟢 Completadas</p>
+      </div>
+    </div>
 
-  <!-- ===================== MODAL EDITAR ===================== -->
-  <div id="modalEditar" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden z-50">
-    <div class="bg-white p-6 rounded w-full max-w-xl">
-      <h2 class="text-xl font-semibold mb-4">Editar artículo</h2>
-      <form id="formEditar">
-        <input type="hidden" name="id" id="idArticulo"/>
-        <div class="grid grid-cols-2 gap-4">
-          <input class="p-2 border rounded" name="nombre" placeholder="Nombre" type="text" required/>
-          <input class="p-2 border rounded" name="proveedor" placeholder="Proveedor" type="text" required/>
-          <input class="p-2 border rounded" name="cantidad" placeholder="Cantidad" type="number" required/>
-          <input class="p-2 border rounded" name="precio" placeholder="Precio" step="0.01" type="number" required/>
-          <input class="p-2 border rounded" name="fecha" type="date" required/>
-          <input class="p-2 border rounded" name="vidautil" placeholder="Vida útil (años)" type="text" required/>
-          <input class="p-2 border rounded" name="ubicacion" placeholder="Ubicación" type="text" required/>
-          <select name="estado" required class="p-2 border rounded">
-            <option value="">Seleccione Estado</option>
-            <option value="nuevo">Nuevo</option>
-            <option value="usado">Usado</option>
-            <option value="semi-nuevo">Semi-nuevo</option>
+    <!-- Tabla órdenes -->
+    <div class="bg-white rounded shadow overflow-x-auto">
+      <div id="tablaOrdenes">
+        <p class="text-gray-400 text-center py-8">Cargando órdenes...</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal nueva orden manual -->
+  <div id="modalNuevaOrden" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+      <h3 class="text-lg font-semibold mb-4">➕ Nueva Orden de Compra Manual</h3>
+      <form id="formNuevaOrden" class="space-y-4">
+        <div>
+          <label class="text-sm font-semibold text-gray-600">Máquina:</label>
+          <select id="nuevaOrdenMaquina" class="border border-gray-300 rounded w-full p-2 text-sm mt-1">
+            <option value="">-- Sin máquina asociada --</option>
+            <option value="Maquina empaque y enrollado">Embaladora TK 381</option>
+            <option value="Embaladora de box">Embaladora de Box TK 386</option>
+            <option value="Cerradora de colchones industrial">Cerradora TK 050</option>
+            <option value="GLUELINE">Glueline TK 60KGLINK</option>
+            <option value="Multi-Needle Quilting Machine">Quilting Machine HC 3500</option>
+            <option value="Tapa-tapa">Tapa-Tapa TK 900/2</option>
+            <option value="General">General / Sin máquina</option>
           </select>
-          <input class="p-2 border rounded" name="familia" placeholder="Familia" type="text"/>
-          <input class="p-2 border rounded" name="codigobarras" placeholder="Código de barras" type="text"/>
-          <input class="p-2 border rounded" name="stock_minimo" placeholder="Stock mínimo (alerta)" type="number" min="0"/>
         </div>
-        <div class="flex justify-end mt-4">
-          <button type="button" class="text-gray-600 mr-4" onclick="cerrarModal()">Cancelar</button>
-          <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded">Guardar</button>
+        <div>
+          <label class="text-sm font-semibold text-gray-600">Pieza / Material requerido: *</label>
+          <input id="nuevaOrdenPieza" class="border border-gray-300 rounded w-full p-2 text-sm mt-1" placeholder="Nombre de la pieza o material" required />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-sm font-semibold text-gray-600">Cantidad: *</label>
+            <input id="nuevaOrdenCantidad" type="number" min="1" value="1" class="border border-gray-300 rounded w-full p-2 text-sm mt-1" required />
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-gray-600">Solicitante: *</label>
+            <input id="nuevaOrdenSolicitante" class="border border-gray-300 rounded w-full p-2 text-sm mt-1" placeholder="Nombre del solicitante" required />
+          </div>
+        </div>
+        <div>
+          <label class="text-sm font-semibold text-gray-600">Observación:</label>
+          <textarea id="nuevaOrdenObservacion" class="border border-gray-300 rounded w-full p-2 text-sm mt-1" rows="2" placeholder="Motivo u observación adicional..."></textarea>
+        </div>
+        <div class="flex gap-2 justify-end">
+          <button type="button" onclick="cerrarModalNuevaOrden()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">Cancelar</button>
+          <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Crear Orden</button>
         </div>
       </form>
     </div>
   </div>
-</main>
 
-<!-- ===================== SCRIPTS ===================== -->
-<script>
-  const roleUsuario = localStorage.getItem('role') || 'viewer';
-  document.getElementById("nombreRol").textContent = roleUsuario;
-
-  if(roleUsuario !== 'admin') {
-    document.getElementById("formInventario").style.display = 'none';
-  }
-
-  async function cargarInventario() {
-    try {
-      const res = await fetch("https://gsmio-production-3b4c.up.railway.app/api/inventario");
-      if(!res.ok) throw new Error("Datos de inventario no válidos");
-      const data = await res.json();
-      const cuerpo = document.getElementById("cuerpoTabla");
-      cuerpo.innerHTML = "";
-      data.forEach(item => {
-        const fila = document.createElement("tr");
-        const stockBajo = item.stock_minimo > 0 && item.cantidad <= item.stock_minimo;
-        if (stockBajo) fila.classList.add("bg-red-50");
-        fila.innerHTML = `
-          <td class="${stockBajo ? 'font-bold text-red-700' : ''}">${item.nombre}</td>
-          <td>${item.proveedor}</td>
-          <td class="${stockBajo ? 'font-bold text-red-600' : ''}">${item.cantidad} ${stockBajo ? '⚠️' : ''}</td>
-          <td>${item.precio}</td>
-          <td>${item.fecha ? item.fecha.split('T')[0] : ''}</td>
-          <td>${item.vidautil}</td>
-          <td>${item.ubicacion}</td>
-          <td>${item.estado}</td>
-          <td>${item.familia || ""}</td>
-          <td>${item.codigobarras || ""}</td>
-          <td class="text-center">${item.stock_minimo || 0}</td>
-          <td class="text-center">${roleUsuario==='admin'?`<button onclick="abrirModalEdicion(${item.id},this)">✏️</button>`:''}</td>
-          <td class="text-center">${roleUsuario==='admin'?`<button onclick="eliminarArticulo(${item.id})">🗑️</button>`:''}</td>
-        `;
-        cuerpo.appendChild(fila);
-      });
-      // Alertas stock bajo
-      const bajos = data.filter(i => i.stock_minimo > 0 && i.cantidad <= i.stock_minimo);
-      const alertasDiv = document.getElementById("alertasStock");
-      const listaAlertas = document.getElementById("listaAlertas");
-      if (bajos.length > 0) {
-        alertasDiv.classList.remove("hidden");
-        listaAlertas.innerHTML = bajos.map(i => `
-          <div class="flex items-center justify-between bg-white border border-red-200 rounded p-2">
-            <div class="flex items-center gap-3">
-              <span class="text-red-500">⚠️</span>
-              <span class="font-semibold">${i.nombre}</span>
-              <span class="text-sm text-red-600">Stock actual: <strong>${i.cantidad}</strong> / Mínimo: ${i.stock_minimo}</span>
-            </div>
-            ${roleUsuario === 'admin' ? `<button onclick="crearOrdenDesdeAlerta('${i.nombre.replace(/'/g,"\'")}', ${i.id})" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded">📦 Crear Orden</button>` : ''}
+  <!-- Modal actualizar orden -->
+  <div id="modalObs" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+      <h3 class="text-lg font-semibold mb-4">📝 Actualizar Orden</h3>
+      <input type="hidden" id="obsOrdenId" />
+      <input type="hidden" id="obsInventarioId" />
+      <div class="mb-4">
+        <label class="text-sm font-semibold text-gray-600">Estado:</label>
+        <select id="obsEstado" class="border border-gray-300 rounded w-full p-2 text-sm mt-1" onchange="toggleActualizarStock()">
+          <option value="pendiente">🔴 Pendiente</option>
+          <option value="en_proceso">🟡 En proceso</option>
+          <option value="completada">🟢 Completada</option>
+        </select>
+      </div>
+      <div class="mb-4">
+        <label class="text-sm font-semibold text-gray-600">Observación:</label>
+        <textarea id="obsTexto" class="border border-gray-300 rounded w-full p-2 text-sm mt-1" rows="2" placeholder="Añade una nota..."></textarea>
+      </div>
+      <!-- Actualizar stock al completar -->
+      <div id="seccionActualizarStock" class="hidden mb-4 bg-green-50 border border-green-300 rounded p-3">
+        <p class="text-sm font-semibold text-green-800 mb-2">📦 ¿Actualizar stock en inventario?</p>
+        <div class="space-y-2">
+          <input id="buscadorInventario" type="text" placeholder="🔍 Buscar artículo..." class="border border-gray-300 rounded p-2 text-sm w-full" oninput="filtrarSelectInventario()" />
+          <div class="flex items-center gap-3">
+            <select id="stockInventarioItem" class="border border-gray-300 rounded p-2 text-sm flex-1" size="4">
+              <option value="">-- No actualizar inventario --</option>
+            </select>
+            <input id="stockCantidad" type="number" min="1" value="1" class="border border-gray-300 rounded p-2 text-sm w-20" placeholder="Cant." />
           </div>
-        `).join("");
-      } else {
-        alertasDiv.classList.add("hidden");
-      }
-    } catch(err) {
-      console.error("Error al cargar inventario:",err);
-    }
-  }
-
-  async function crearOrdenDesdeAlerta(nombrePieza, inventarioId) {
-    const solicitante = prompt("¿Quién solicita esta orden?", "");
-    if (!solicitante) return;
-    const cantidad = prompt("¿Cuántas unidades necesitas?", "1");
-    if (!cantidad) return;
-    try {
-      const res = await fetch("https://gsmio-production-3b4c.up.railway.app/api/ordenes_compra", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pieza: nombrePieza,
-          cantidad: parseInt(cantidad),
-          solicitante,
-          maquina: "General",
-          observacion: "Generada por alerta de stock mínimo",
-          tipo: "manual",
-          inventario_id: inventarioId
-        })
-      });
-      if (!res.ok) throw new Error(await res.text());
-      alert("✅ Orden de compra creada correctamente.");
-    } catch(err) {
-      alert("❌ Error al crear orden: " + err.message);
-    }
-  }
-
-  window.addEventListener('DOMContentLoaded', cargarInventario);
-
-  function validarFormulario(form){
-    let valid = true;
-    ['nombre','proveedor','cantidad','precio','fecha','vidautil','ubicacion','estado'].forEach(name=>{
-      const input=form.elements[name];
-      if(input){
-        if(!input.value.trim()){ input.classList.add("border-red-500"); input.setAttribute("title","Campo obligatorio"); valid=false;}
-        else{ input.classList.remove("border-red-500"); input.removeAttribute("title");}
-      }
-    });
-    return valid;
-  }
-
-  document.getElementById("formInventario")?.addEventListener("submit", async e=>{
-    e.preventDefault();
-    const form = e.target;
-    if(!validarFormulario(form)) return;
-    const datos = Object.fromEntries(new FormData(form).entries());
-    try{
-      const res = await fetch("https://gsmio-production-3b4c.up.railway.app/api/inventario",{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(datos)
-      });
-      if(!res.ok) throw new Error(await res.text());
-      alert("Artículo guardado correctamente.");
-      form.reset();
-      cargarInventario();
-    }catch(err){alert("Error al guardar artículo."); console.error(err);}
-  });
-
-  async function eliminarArticulo(id){
-    if(!confirm("¿Eliminar este artículo?")) return;
-    try{
-      const res = await fetch(`https://gsmio-production-3b4c.up.railway.app/api/inventario/${id}`,{method:'DELETE'});
-      if(!res.ok) throw new Error(await res.text());
-      alert("Artículo eliminado.");
-      cargarInventario();
-    }catch(err){alert("Error al eliminar artículo."); console.error(err);}
-  }
-
-  function abrirModalEdicion(id,boton){
-    const fila=boton.closest("tr").querySelectorAll("td");
-    const form=document.getElementById("formEditar");
-    document.getElementById("idArticulo").value=id;
-    form.nombre.value=fila[0].innerText;
-    form.proveedor.value=fila[1].innerText;
-    form.cantidad.value=fila[2].innerText;
-    form.precio.value=fila[3].innerText;
-    form.fecha.value=fila[4].innerText;
-    form.vidautil.value=fila[5].innerText;
-    form.ubicacion.value=fila[6].innerText;
-    form.estado.value=fila[7].innerText;
-    form.familia.value=fila[8].innerText;
-    form.codigobarras.value=fila[9].innerText;
-    form.stock_minimo.value=fila[10].innerText || 0;
-    document.getElementById("modalEditar").classList.remove("hidden");
-  }
-
-  function cerrarModal(){document.getElementById("modalEditar").classList.add("hidden");}
-
-  document.getElementById("formEditar").addEventListener("submit", async e=>{
-    e.preventDefault();
-    const form=e.target;
-    if(!validarFormulario(form)) return;
-    const datos=Object.fromEntries(new FormData(form).entries());
-    const id=datos.id; delete datos.id;
-    datos.stock_minimo = datos.stock_minimo || 0;
-    try{
-      const res=await fetch(`https://gsmio-production-3b4c.up.railway.app/api/inventario/${id}`,{
-        method:'PUT',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(datos)
-      });
-      if(!res.ok) throw new Error(await res.text());
-      alert("Artículo actualizado.");
-      cerrarModal();
-      cargarInventario();
-    }catch(err){alert("Error al actualizar artículo."); console.error(err);}
-  });
-
-  // Exportar CSV
-  document.getElementById("btnExportar").addEventListener("click",()=>{
-    const filas=document.querySelectorAll("#cuerpoTabla tr");
-    let csv="Nombre,Proveedor,Cantidad,Precio,Fecha,Vida útil,Ubicación,Estado,Familia,Código\n";
-    filas.forEach(row=>{
-      const celdas=Array.from(row.querySelectorAll("td")).slice(0,10).map(td=>td.textContent.trim());
-      csv+=celdas.join(",")+"\n";
-    });
-    const blob=new Blob([csv],{type:"text/csv"});
-    const a=document.createElement("a");
-    a.href=URL.createObjectURL(blob); a.download="inventario.csv"; a.click();
-    URL.revokeObjectURL(a.href);
-  });
-
-  // Imprimir tabla
-  document.getElementById("btnImprimir").addEventListener("click",()=>{
-    const original=document.title; document.title="Inventario"; window.print(); document.title=original;
-  });
-
-  // Filtros
-  function filtrarInventario(){
-    const n=document.getElementById("filtroNombre").value.toLowerCase();
-    const f=document.getElementById("filtroFamilia").value.toLowerCase();
-    const p=document.getElementById("filtroProveedor").value.toLowerCase();
-    const u=document.getElementById("filtroUbicacion").value.toLowerCase();
-    const fecha=document.getElementById("filtroFecha").value;
-    document.querySelectorAll("#cuerpoTabla tr").forEach(row=>{
-      const tds=row.querySelectorAll("td");
-      const ok=(!n || tds[0].textContent.toLowerCase().includes(n)) &&
-               (!p || tds[1].textContent               .toLowerCase().includes(p)) &&
-               (!fecha || tds[4].textContent === fecha) &&
-               (!u || tds[6].textContent.toLowerCase().includes(u)) &&
-               (!f || tds[8].textContent.toLowerCase().includes(f));
-      row.style.display = ok ? "" : "none";
-    });
-  }
-
-  function limpiarFiltros() {
-    document.getElementById("filtroNombre").value = "";
-    document.getElementById("filtroFamilia").value = "";
-    document.getElementById("filtroProveedor").value = "";
-    document.getElementById("filtroUbicacion").value = "";
-    document.getElementById("filtroFecha").value = "";
-    filtrarInventario();
-  }
-
-  // Menú móvil
-  const menuToggle = document.getElementById("menuToggle");
-  const mobileMenu = document.getElementById("mobileMenu");
-  menuToggle.addEventListener("click", () => {
-    mobileMenu.classList.toggle("hidden");
-  });
-
-</script>
-
-<!-- Footer -->
-<footer class="bg-gray-600 text-gray-200 text-center py-6 mt-10 text-sm">
-  <div class="max-w-4xl mx-auto px-4 flex flex-col items-center space-y-2">
-    <p>© 2025 <strong>GEOWAY</strong>, Technology-Based Initiative – IBT. All rights reserved.</p>
-    <a href="https://geo-way.github.io/GeoWay.io/index.html" target="_blank" class="hover:opacity-80 transition-opacity">
-      <img src="https://geo-way.github.io/GeoWay.io/images/Logo5.png" alt="GEOWAY Logo" class="h-8 invert">
-    </a>
+        </div>
+        <p class="text-xs text-green-700 mt-1">Selecciona el artículo en inventario para sumar las unidades recibidas.</p>
+      </div>
+      <div class="flex gap-2 justify-end">
+        <button onclick="cerrarModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">Cancelar</button>
+        <button onclick="guardarActualizacion()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Guardar</button>
+      </div>
+    </div>
   </div>
-</footer>
 
+  <footer class="bg-gray-600 text-gray-200 text-center py-6 mt-10 text-sm">
+    <div class="max-w-4xl mx-auto px-4 flex flex-col items-center space-y-2">
+      <p>© 2025 <strong>GEOWAY</strong>, Technology-Based Initiative – IBT. All rights reserved.</p>
+      <a href="https://geo-way.github.io/GeoWay.io/index.html" target="_blank">
+        <img src="https://geo-way.github.io/GeoWay.io/images/Logo5.png" alt="GEOWAY Logo" class="h-8 invert">
+      </a>
+    </div>
+  </footer>
+
+<script>
+const API_BASE = "https://gsmio-production-3b4c.up.railway.app";
+document.getElementById("nombreRol").innerText = rolUsuario;
+document.getElementById("menuToggle").addEventListener("click", () => {
+  document.getElementById("mobileMenu").classList.toggle("hidden");
+});
+
+// Ocultar botón nueva orden a viewers
+if (rolUsuario !== "admin") {
+  document.getElementById("btnNuevaOrden").style.display = "none";
+}
+
+let todasOrdenes = [];
+let inventarioItems = [];
+
+async function cargarOrdenes() {
+  try {
+    const res = await fetch(`${API_BASE}/api/ordenes_compra`);
+    todasOrdenes = await res.json();
+    actualizarContadores(todasOrdenes);
+    renderOrdenes(todasOrdenes);
+  } catch (err) {
+    document.getElementById("tablaOrdenes").innerHTML = `<p class="text-red-400 text-center py-6">Error al cargar órdenes.</p>`;
+  }
+}
+
+async function cargarInventario() {
+  try {
+    const res = await fetch(`${API_BASE}/api/inventario`);
+    inventarioItems = await res.json();
+    const select = document.getElementById("stockInventarioItem");
+    select.innerHTML = '<option value="">-- No actualizar inventario --</option>';
+    inventarioItems.forEach(item => {
+      const opt = document.createElement("option");
+      opt.value = item.id;
+      opt.textContent = `${item.nombre} (stock: ${item.cantidad})`;
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("Error al cargar inventario:", err);
+  }
+}
+
+function actualizarContadores(ordenes) {
+  document.getElementById("cntPendiente").textContent = ordenes.filter(o => o.estado === "pendiente").length;
+  document.getElementById("cntEnProceso").textContent = ordenes.filter(o => o.estado === "en_proceso").length;
+  document.getElementById("cntCompletada").textContent = ordenes.filter(o => o.estado === "completada").length;
+}
+
+function estadoBadge(estado) {
+  const map = { pendiente: "bg-red-100 text-red-700", en_proceso: "bg-yellow-100 text-yellow-700", completada: "bg-green-100 text-green-700" };
+  const labels = { pendiente: "🔴 Pendiente", en_proceso: "🟡 En proceso", completada: "🟢 Completada" };
+  return `<span class="px-2 py-1 rounded-full text-xs font-semibold ${map[estado] || 'bg-gray-100 text-gray-600'}">${labels[estado] || estado}</span>`;
+}
+
+function tipoBadge(tipo) {
+  return tipo === "manual"
+    ? `<span class="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">Manual</span>`
+    : `<span class="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">Auto</span>`;
+}
+
+function renderOrdenes(ordenes) {
+  if (!ordenes || ordenes.length === 0) {
+    document.getElementById("tablaOrdenes").innerHTML = `<p class="text-gray-400 text-center py-8">No hay órdenes de compra.</p>`;
+    return;
+  }
+  document.getElementById("tablaOrdenes").innerHTML = `
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="p-3 text-left">#</th>
+          <th class="p-3 text-left">Tipo</th>
+          <th class="p-3 text-left">Máquina</th>
+          <th class="p-3 text-left">Pieza requerida</th>
+          <th class="p-3 text-center">Cant.</th>
+          <th class="p-3 text-left">Solicitante</th>
+          <th class="p-3 text-left">Fecha</th>
+          <th class="p-3 text-center">Estado</th>
+          <th class="p-3 text-left">Observación</th>
+          ${rolUsuario === "admin" ? '<th class="p-3 text-center">Acción</th>' : ""}
+        </tr>
+      </thead>
+      <tbody>
+        ${ordenes.map(o => `
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-3 text-gray-400">${o.id}</td>
+            <td class="p-3">${tipoBadge(o.tipo)}</td>
+            <td class="p-3 font-medium">${o.maquina || "—"}</td>
+            <td class="p-3 font-semibold text-red-700">${o.pieza || ""}</td>
+            <td class="p-3 text-center">${o.cantidad || 1}</td>
+            <td class="p-3">${o.solicitante || o.tecnico || "—"}</td>
+            <td class="p-3 text-xs">${o.created_at ? new Date(o.created_at).toLocaleDateString("es-ES") : ""}</td>
+            <td class="p-3 text-center">${estadoBadge(o.estado)}</td>
+            <td class="p-3 text-xs text-gray-500">${o.observacion || "—"}</td>
+            ${rolUsuario === "admin" ? `
+            <td class="p-3 text-center">
+              <div class="flex gap-1 justify-center">
+                <button onclick="abrirModal(${o.id}, '${o.estado}', \`${(o.observacion||"").replace(/`/g,"'")}\`, ${o.inventario_id || "null"})" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded">✏️</button>
+                <button onclick="eliminarOrden(${o.id})" class="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 rounded">🗑️</button>
+              </div>
+            </td>` : ""}
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+function filtrarOrdenes() {
+  const estado = document.getElementById("filtroEstado").value;
+  const busq = document.getElementById("filtroBusqueda").value.toLowerCase();
+  const filtradas = todasOrdenes.filter(o => {
+    const matchEstado = !estado || o.estado === estado;
+    const matchBusq = !busq || (o.maquina||"").toLowerCase().includes(busq) || (o.pieza||"").toLowerCase().includes(busq) || (o.solicitante||o.tecnico||"").toLowerCase().includes(busq);
+    return matchEstado && matchBusq;
+  });
+  actualizarContadores(todasOrdenes);
+  renderOrdenes(filtradas);
+}
+
+// ---- Nueva orden manual ----
+function abrirModalNuevaOrden() {
+  document.getElementById("formNuevaOrden").reset();
+  document.getElementById("modalNuevaOrden").classList.remove("hidden");
+}
+
+function cerrarModalNuevaOrden() {
+  document.getElementById("modalNuevaOrden").classList.add("hidden");
+}
+
+document.getElementById("formNuevaOrden").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const pieza = document.getElementById("nuevaOrdenPieza").value.trim();
+  const cantidad = document.getElementById("nuevaOrdenCantidad").value;
+  const solicitante = document.getElementById("nuevaOrdenSolicitante").value.trim();
+  const maquina = document.getElementById("nuevaOrdenMaquina").value;
+  const observacion = document.getElementById("nuevaOrdenObservacion").value.trim();
+
+  if (!pieza || !solicitante) { alert("Completa los campos obligatorios."); return; }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/ordenes_compra`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pieza, cantidad: parseInt(cantidad), solicitante, maquina, observacion, tipo: "manual" })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    alert("✅ Orden creada correctamente.");
+    cerrarModalNuevaOrden();
+    cargarOrdenes();
+  } catch (err) {
+    alert("❌ Error al crear orden: " + err.message);
+  }
+});
+
+// ---- Actualizar orden ----
+function toggleActualizarStock() {
+  const estado = document.getElementById("obsEstado").value;
+  const seccion = document.getElementById("seccionActualizarStock");
+  if (estado === "completada") seccion.classList.remove("hidden");
+  else seccion.classList.add("hidden");
+}
+
+function abrirModal(id, estado, obs, inventarioId) {
+  document.getElementById("obsOrdenId").value = id;
+  document.getElementById("obsEstado").value = estado;
+  document.getElementById("obsTexto").value = obs;
+  document.getElementById("obsInventarioId").value = inventarioId || "";
+  toggleActualizarStock();
+  if (inventarioId) document.getElementById("stockInventarioItem").value = inventarioId;
+  document.getElementById("modalObs").classList.remove("hidden");
+}
+
+function cerrarModal() {
+  document.getElementById("modalObs").classList.add("hidden");
+}
+
+async function guardarActualizacion() {
+  const id = document.getElementById("obsOrdenId").value;
+  const estado = document.getElementById("obsEstado").value;
+  const observacion = document.getElementById("obsTexto").value.trim();
+  const inventarioId = document.getElementById("stockInventarioItem").value;
+  const cantidadStock = parseInt(document.getElementById("stockCantidad").value) || 0;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/ordenes_compra/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ estado, observacion, inventario_id: inventarioId || null })
+    });
+    if (!res.ok) throw new Error(await res.text());
+
+    // Si se completó y hay artículo de inventario seleccionado, actualizar stock
+    if (estado === "completada" && inventarioId && cantidadStock > 0) {
+      const resStock = await fetch(`${API_BASE}/api/inventario/${inventarioId}/sumar_stock`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cantidad: cantidadStock })
+      });
+      if (resStock.ok) {
+        alert("✅ Orden actualizada y stock incrementado correctamente.");
+      } else {
+        alert("✅ Orden actualizada. ⚠️ No se pudo actualizar el stock.");
+      }
+    } else {
+      alert("✅ Orden actualizada correctamente.");
+    }
+
+    cerrarModal();
+    cargarOrdenes();
+  } catch (err) {
+    alert("❌ Error al actualizar: " + err.message);
+  }
+}
+
+async function eliminarOrden(id) {
+  if (!confirm("¿Eliminar esta orden de compra?")) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/ordenes_compra/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error(await res.text());
+    cargarOrdenes();
+  } catch (err) {
+    alert("❌ Error al eliminar: " + err.message);
+  }
+}
+
+function filtrarSelectInventario() {
+  const q = document.getElementById("buscadorInventario").value.toLowerCase();
+  const select = document.getElementById("stockInventarioItem");
+  Array.from(select.options).forEach(opt => {
+    if (opt.value === "") return;
+    opt.style.display = opt.textContent.toLowerCase().includes(q) ? "" : "none";
+  });
+}
+
+window.onload = () => {
+  cargarOrdenes();
+  cargarInventario();
+};
+</script>
 </body>
 </html>
