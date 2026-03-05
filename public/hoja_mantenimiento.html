@@ -598,7 +598,7 @@ async function cargarHoja(id) {
     setTimeout(() => {
       document.getElementById("responsable").value = h.responsable || "";
       document.getElementById("mesAnio").value = h.mes_anio || "";
-      document.getElementById("fechaEjecucion").value = h.fecha_ejecucion || "";
+      document.getElementById("fechaEjecucion").value = h.fecha_ejecucion ? h.fecha_ejecucion.split('T')[0] : "";
       document.getElementById("horaInicio").value = h.hora_inicio || "";
       document.getElementById("horaFin").value = h.hora_fin || "";
       document.getElementById("tecnico").value = h.tecnico || "";
@@ -606,7 +606,7 @@ async function cargarHoja(id) {
       document.getElementById("observaciones").value = h.observaciones || "";
       document.getElementById("firmaTecnico").value = h.firma_tecnico || "";
       document.getElementById("firmaSupervisor").value = h.firma_supervisor || "";
-      document.getElementById("fechaFirma").value = h.fecha_firma || "";
+      document.getElementById("fechaFirma").value = h.fecha_firma ? h.fecha_firma.split('T')[0] : "";
 
       if (h.frecuencia) {
         const r = document.querySelector(`input[name="frecuencia"][value="${h.frecuencia}"]`);
@@ -651,6 +651,24 @@ async function cargarHoja(id) {
         });
         if (contRepuestos === 0) agregarRepuesto();
       }
+      // Cargar órdenes de compra generadas
+const resOrdenes = await fetch(`${API_BASE}/api/ordenes_compra?hoja_id=${id}`);
+const ordenes = await resOrdenes.json();
+if (ordenes && ordenes.length > 0) {
+  const divOrdenes = document.getElementById("seccionOrdenes");
+  if (divOrdenes) {
+    divOrdenes.classList.remove("hidden");
+    document.getElementById("listaOrdenes").innerHTML = ordenes.map(o => `
+      <div class="flex items-center gap-3 bg-yellow-50 border border-yellow-300 rounded p-2 text-sm">
+        <span class="text-yellow-600">⚠️</span>
+        <span class="font-semibold">${o.pieza}</span>
+        <span class="text-gray-500">— Cantidad: ${o.cantidad}</span>
+        <span class="text-gray-400 text-xs">(${o.item_origen})</span>
+        <span class="ml-auto text-xs px-2 py-1 rounded-full ${o.estado === 'completada' ? 'bg-green-100 text-green-700' : o.estado === 'en_proceso' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}">${o.estado}</span>
+      </div>
+    `).join("");
+  }
+}
       window.scrollTo({ top: 0, behavior: "smooth" });
     }, 100);
   } catch (err) {
