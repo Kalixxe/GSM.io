@@ -54,14 +54,16 @@
 
     <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
       <h1 class="text-2xl font-bold text-gray-800">📦 Órdenes de Compra</h1>
-      <div class="flex gap-3 flex-wrap">
+      <div class="flex gap-3 flex-wrap items-center">
         <select id="filtroEstado" class="p-2 border rounded text-sm" onchange="filtrarOrdenes()">
           <option value="">Todos los estados</option>
           <option value="pendiente">🔴 Pendiente</option>
           <option value="en_proceso">🟡 En proceso</option>
           <option value="completada">🟢 Completada</option>
         </select>
-        <input id="filtroBusqueda" placeholder="🔍 Buscar por máquina o pieza..." class="p-2 border rounded text-sm w-64" oninput="filtrarOrdenes()" />
+        <input id="filtroBusqueda" placeholder="🔍 Buscar..." class="p-2 border rounded text-sm w-48" oninput="filtrarOrdenes()" />
+        ${rolUsuario === "admin" ? "" : ""}
+        <button id="btnNuevaOrden" onclick="abrirModalNuevaOrden()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold text-sm">+ Nueva Orden</button>
       </div>
     </div>
 
@@ -89,14 +91,59 @@
     </div>
   </main>
 
-  <!-- Modal observación -->
+  <!-- Modal nueva orden manual -->
+  <div id="modalNuevaOrden" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+      <h3 class="text-lg font-semibold mb-4">➕ Nueva Orden de Compra Manual</h3>
+      <form id="formNuevaOrden" class="space-y-4">
+        <div>
+          <label class="text-sm font-semibold text-gray-600">Máquina:</label>
+          <select id="nuevaOrdenMaquina" class="border border-gray-300 rounded w-full p-2 text-sm mt-1">
+            <option value="">-- Sin máquina asociada --</option>
+            <option value="Maquina empaque y enrollado">Embaladora TK 381</option>
+            <option value="Embaladora de box">Embaladora de Box TK 386</option>
+            <option value="Cerradora de colchones industrial">Cerradora TK 050</option>
+            <option value="GLUELINE">Glueline TK 60KGLINK</option>
+            <option value="Multi-Needle Quilting Machine">Quilting Machine HC 3500</option>
+            <option value="Tapa-tapa">Tapa-Tapa TK 900/2</option>
+            <option value="General">General / Sin máquina</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-semibold text-gray-600">Pieza / Material requerido: *</label>
+          <input id="nuevaOrdenPieza" class="border border-gray-300 rounded w-full p-2 text-sm mt-1" placeholder="Nombre de la pieza o material" required />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-sm font-semibold text-gray-600">Cantidad: *</label>
+            <input id="nuevaOrdenCantidad" type="number" min="1" value="1" class="border border-gray-300 rounded w-full p-2 text-sm mt-1" required />
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-gray-600">Solicitante: *</label>
+            <input id="nuevaOrdenSolicitante" class="border border-gray-300 rounded w-full p-2 text-sm mt-1" placeholder="Nombre del solicitante" required />
+          </div>
+        </div>
+        <div>
+          <label class="text-sm font-semibold text-gray-600">Observación:</label>
+          <textarea id="nuevaOrdenObservacion" class="border border-gray-300 rounded w-full p-2 text-sm mt-1" rows="2" placeholder="Motivo u observación adicional..."></textarea>
+        </div>
+        <div class="flex gap-2 justify-end">
+          <button type="button" onclick="cerrarModalNuevaOrden()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">Cancelar</button>
+          <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Crear Orden</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal actualizar orden -->
   <div id="modalObs" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
     <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
       <h3 class="text-lg font-semibold mb-4">📝 Actualizar Orden</h3>
       <input type="hidden" id="obsOrdenId" />
+      <input type="hidden" id="obsInventarioId" />
       <div class="mb-4">
         <label class="text-sm font-semibold text-gray-600">Estado:</label>
-        <select id="obsEstado" class="border border-gray-300 rounded w-full p-2 text-sm mt-1">
+        <select id="obsEstado" class="border border-gray-300 rounded w-full p-2 text-sm mt-1" onchange="toggleActualizarStock()">
           <option value="pendiente">🔴 Pendiente</option>
           <option value="en_proceso">🟡 En proceso</option>
           <option value="completada">🟢 Completada</option>
@@ -104,7 +151,18 @@
       </div>
       <div class="mb-4">
         <label class="text-sm font-semibold text-gray-600">Observación:</label>
-        <textarea id="obsTexto" class="border border-gray-300 rounded w-full p-2 text-sm mt-1" rows="3" placeholder="Añade una nota sobre esta orden..."></textarea>
+        <textarea id="obsTexto" class="border border-gray-300 rounded w-full p-2 text-sm mt-1" rows="2" placeholder="Añade una nota..."></textarea>
+      </div>
+      <!-- Actualizar stock al completar -->
+      <div id="seccionActualizarStock" class="hidden mb-4 bg-green-50 border border-green-300 rounded p-3">
+        <p class="text-sm font-semibold text-green-800 mb-2">📦 ¿Actualizar stock en inventario?</p>
+        <div class="flex items-center gap-3">
+          <select id="stockInventarioItem" class="border border-gray-300 rounded p-2 text-sm flex-1">
+            <option value="">-- No actualizar inventario --</option>
+          </select>
+          <input id="stockCantidad" type="number" min="1" value="1" class="border border-gray-300 rounded p-2 text-sm w-20" placeholder="Cant." />
+        </div>
+        <p class="text-xs text-green-700 mt-1">Selecciona el artículo en inventario para sumar las unidades recibidas.</p>
       </div>
       <div class="flex gap-2 justify-end">
         <button onclick="cerrarModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">Cancelar</button>
@@ -129,7 +187,13 @@ document.getElementById("menuToggle").addEventListener("click", () => {
   document.getElementById("mobileMenu").classList.toggle("hidden");
 });
 
+// Ocultar botón nueva orden a viewers
+if (rolUsuario !== "admin") {
+  document.getElementById("btnNuevaOrden").style.display = "none";
+}
+
 let todasOrdenes = [];
+let inventarioItems = [];
 
 async function cargarOrdenes() {
   try {
@@ -142,6 +206,23 @@ async function cargarOrdenes() {
   }
 }
 
+async function cargarInventario() {
+  try {
+    const res = await fetch(`${API_BASE}/api/inventario`);
+    inventarioItems = await res.json();
+    const select = document.getElementById("stockInventarioItem");
+    select.innerHTML = '<option value="">-- No actualizar inventario --</option>';
+    inventarioItems.forEach(item => {
+      const opt = document.createElement("option");
+      opt.value = item.id;
+      opt.textContent = `${item.nombre} (stock: ${item.cantidad})`;
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("Error al cargar inventario:", err);
+  }
+}
+
 function actualizarContadores(ordenes) {
   document.getElementById("cntPendiente").textContent = ordenes.filter(o => o.estado === "pendiente").length;
   document.getElementById("cntEnProceso").textContent = ordenes.filter(o => o.estado === "en_proceso").length;
@@ -149,13 +230,15 @@ function actualizarContadores(ordenes) {
 }
 
 function estadoBadge(estado) {
-  const map = {
-    pendiente: "bg-red-100 text-red-700",
-    en_proceso: "bg-yellow-100 text-yellow-700",
-    completada: "bg-green-100 text-green-700"
-  };
+  const map = { pendiente: "bg-red-100 text-red-700", en_proceso: "bg-yellow-100 text-yellow-700", completada: "bg-green-100 text-green-700" };
   const labels = { pendiente: "🔴 Pendiente", en_proceso: "🟡 En proceso", completada: "🟢 Completada" };
   return `<span class="px-2 py-1 rounded-full text-xs font-semibold ${map[estado] || 'bg-gray-100 text-gray-600'}">${labels[estado] || estado}</span>`;
+}
+
+function tipoBadge(tipo) {
+  return tipo === "manual"
+    ? `<span class="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">Manual</span>`
+    : `<span class="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">Auto</span>`;
 }
 
 function renderOrdenes(ordenes) {
@@ -168,11 +251,11 @@ function renderOrdenes(ordenes) {
       <thead class="bg-gray-100">
         <tr>
           <th class="p-3 text-left">#</th>
+          <th class="p-3 text-left">Tipo</th>
           <th class="p-3 text-left">Máquina</th>
           <th class="p-3 text-left">Pieza requerida</th>
           <th class="p-3 text-center">Cant.</th>
-          <th class="p-3 text-left">Ítem origen</th>
-          <th class="p-3 text-left">Técnico</th>
+          <th class="p-3 text-left">Solicitante</th>
           <th class="p-3 text-left">Fecha</th>
           <th class="p-3 text-center">Estado</th>
           <th class="p-3 text-left">Observación</th>
@@ -183,18 +266,20 @@ function renderOrdenes(ordenes) {
         ${ordenes.map(o => `
           <tr class="border-b hover:bg-gray-50">
             <td class="p-3 text-gray-400">${o.id}</td>
-            <td class="p-3 font-medium">${o.maquina || ""}</td>
+            <td class="p-3">${tipoBadge(o.tipo)}</td>
+            <td class="p-3 font-medium">${o.maquina || "—"}</td>
             <td class="p-3 font-semibold text-red-700">${o.pieza || ""}</td>
             <td class="p-3 text-center">${o.cantidad || 1}</td>
-            <td class="p-3 text-xs text-gray-500">${o.item_origen || ""}</td>
-            <td class="p-3">${o.tecnico || ""}</td>
+            <td class="p-3">${o.solicitante || o.tecnico || "—"}</td>
             <td class="p-3 text-xs">${o.created_at ? new Date(o.created_at).toLocaleDateString("es-ES") : ""}</td>
             <td class="p-3 text-center">${estadoBadge(o.estado)}</td>
             <td class="p-3 text-xs text-gray-500">${o.observacion || "—"}</td>
             ${rolUsuario === "admin" ? `
-            <td class="p-3 text-center flex gap-1 justify-center">
-              <button onclick="abrirModal(${o.id}, '${o.estado}', \`${(o.observacion||"").replace(/`/g,"'")}\`)" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded">✏️</button>
-              <button onclick="eliminarOrden(${o.id})" class="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 rounded">🗑️</button>
+            <td class="p-3 text-center">
+              <div class="flex gap-1 justify-center">
+                <button onclick="abrirModal(${o.id}, '${o.estado}', \`${(o.observacion||"").replace(/`/g,"'")}\`, ${o.inventario_id || "null"})" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded">✏️</button>
+                <button onclick="eliminarOrden(${o.id})" class="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 rounded">🗑️</button>
+              </div>
             </td>` : ""}
           </tr>
         `).join("")}
@@ -208,17 +293,63 @@ function filtrarOrdenes() {
   const busq = document.getElementById("filtroBusqueda").value.toLowerCase();
   const filtradas = todasOrdenes.filter(o => {
     const matchEstado = !estado || o.estado === estado;
-    const matchBusq = !busq || (o.maquina||"").toLowerCase().includes(busq) || (o.pieza||"").toLowerCase().includes(busq);
+    const matchBusq = !busq || (o.maquina||"").toLowerCase().includes(busq) || (o.pieza||"").toLowerCase().includes(busq) || (o.solicitante||o.tecnico||"").toLowerCase().includes(busq);
     return matchEstado && matchBusq;
   });
   actualizarContadores(todasOrdenes);
   renderOrdenes(filtradas);
 }
 
-function abrirModal(id, estado, obs) {
+// ---- Nueva orden manual ----
+function abrirModalNuevaOrden() {
+  document.getElementById("formNuevaOrden").reset();
+  document.getElementById("modalNuevaOrden").classList.remove("hidden");
+}
+
+function cerrarModalNuevaOrden() {
+  document.getElementById("modalNuevaOrden").classList.add("hidden");
+}
+
+document.getElementById("formNuevaOrden").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const pieza = document.getElementById("nuevaOrdenPieza").value.trim();
+  const cantidad = document.getElementById("nuevaOrdenCantidad").value;
+  const solicitante = document.getElementById("nuevaOrdenSolicitante").value.trim();
+  const maquina = document.getElementById("nuevaOrdenMaquina").value;
+  const observacion = document.getElementById("nuevaOrdenObservacion").value.trim();
+
+  if (!pieza || !solicitante) { alert("Completa los campos obligatorios."); return; }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/ordenes_compra`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pieza, cantidad: parseInt(cantidad), solicitante, maquina, observacion, tipo: "manual" })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    alert("✅ Orden creada correctamente.");
+    cerrarModalNuevaOrden();
+    cargarOrdenes();
+  } catch (err) {
+    alert("❌ Error al crear orden: " + err.message);
+  }
+});
+
+// ---- Actualizar orden ----
+function toggleActualizarStock() {
+  const estado = document.getElementById("obsEstado").value;
+  const seccion = document.getElementById("seccionActualizarStock");
+  if (estado === "completada") seccion.classList.remove("hidden");
+  else seccion.classList.add("hidden");
+}
+
+function abrirModal(id, estado, obs, inventarioId) {
   document.getElementById("obsOrdenId").value = id;
   document.getElementById("obsEstado").value = estado;
   document.getElementById("obsTexto").value = obs;
+  document.getElementById("obsInventarioId").value = inventarioId || "";
+  toggleActualizarStock();
+  if (inventarioId) document.getElementById("stockInventarioItem").value = inventarioId;
   document.getElementById("modalObs").classList.remove("hidden");
 }
 
@@ -230,13 +361,33 @@ async function guardarActualizacion() {
   const id = document.getElementById("obsOrdenId").value;
   const estado = document.getElementById("obsEstado").value;
   const observacion = document.getElementById("obsTexto").value.trim();
+  const inventarioId = document.getElementById("stockInventarioItem").value;
+  const cantidadStock = parseInt(document.getElementById("stockCantidad").value) || 0;
+
   try {
     const res = await fetch(`${API_BASE}/api/ordenes_compra/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ estado, observacion })
+      body: JSON.stringify({ estado, observacion, inventario_id: inventarioId || null })
     });
     if (!res.ok) throw new Error(await res.text());
+
+    // Si se completó y hay artículo de inventario seleccionado, actualizar stock
+    if (estado === "completada" && inventarioId && cantidadStock > 0) {
+      const resStock = await fetch(`${API_BASE}/api/inventario/${inventarioId}/sumar_stock`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cantidad: cantidadStock })
+      });
+      if (resStock.ok) {
+        alert("✅ Orden actualizada y stock incrementado correctamente.");
+      } else {
+        alert("✅ Orden actualizada. ⚠️ No se pudo actualizar el stock.");
+      }
+    } else {
+      alert("✅ Orden actualizada correctamente.");
+    }
+
     cerrarModal();
     cargarOrdenes();
   } catch (err) {
@@ -255,7 +406,10 @@ async function eliminarOrden(id) {
   }
 }
 
-window.onload = cargarOrdenes;
+window.onload = () => {
+  cargarOrdenes();
+  cargarInventario();
+};
 </script>
 </body>
 </html>
