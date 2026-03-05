@@ -248,10 +248,8 @@ const API_BASE = "https://gsmio-production-3b4c.up.railway.app";
 document.getElementById("nombreRol").innerText = rolUsuario;
 
 if (rolUsuario !== "admin") {
-  const btnG = document.getElementById("btnGuardar");
-  const btnN = document.getElementById("btnNuevo");
-  if (btnG) btnG.style.display = "none";
-  if (btnN) btnN.style.display = "none";
+  document.getElementById("btnGuardar").style.display = "none";
+  document.getElementById("btnNuevo").style.display = "none";
   setTimeout(() => {
     document.querySelectorAll("#hojaMantenimiento input, #hojaMantenimiento textarea, #hojaMantenimiento select").forEach(el => {
       el.setAttribute("disabled", true);
@@ -675,25 +673,6 @@ async function cargarHoja(id) {
     // Cargar órdenes de compra generadas
     const resOrdenes = await fetch(`${API_BASE}/api/ordenes_compra?hoja_id=${id}`);
     const ordenes = await resOrdenes.json();
-    // Rellenar campos amarillos con piezas guardadas
-    if (ordenes && ordenes.length > 0) {
-      const m = MAQUINAS[h.maquina];
-      if (m) {
-        m.secciones.forEach((sec, si) => {
-          sec.items.forEach((item, ii) => {
-            const orden = ordenes.find(o => o.item_origen === item);
-            if (orden) {
-              const piezaDiv = document.getElementById(`pieza_${si}_${ii}`);
-              const piezaNombre = document.getElementById(`piezaNombre_${si}_${ii}`);
-              const piezaCant = document.getElementById(`piezaCant_${si}_${ii}`);
-              if (piezaDiv) piezaDiv.classList.remove("hidden");
-              if (piezaNombre) piezaNombre.value = orden.pieza || "";
-              if (piezaCant) piezaCant.value = orden.cantidad || 1;
-            }
-          });
-        });
-      }
-    }
     const divOrdenes = document.getElementById("seccionOrdenes");
     if (divOrdenes) {
       if (ordenes && ordenes.length > 0) {
