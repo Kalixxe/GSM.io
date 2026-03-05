@@ -431,7 +431,8 @@
     async function createMarkers() {
       for (const maquina of maquinas) {
         const { nombre, coords, manual, manual1, manual2 } = maquina;
-        const { estado, fecha } = await obtenerEstado(nombre);
+        const data = await obtenerEstado(nombre);
+        const { estado, fecha } = data;
         
         // Almacenar datos de la máquina
         machineData[nombre] = { estado, fecha, coords };
@@ -766,4 +767,5 @@
   </div>
 </body>
 </html>
+
 
