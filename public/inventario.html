@@ -115,7 +115,7 @@
     <table class="min-w-full table-auto text-sm" id="tablaInventario">
       <thead class="bg-gray-200 text-left">
         <tr>
-          <th class="p-2" style="min-width:160px">Nombre</th>
+          <th class="p-2" style="min-width:200px">Nombre</th>
           <th class="p-2" style="min-width:140px">Proveedor</th>
           <th class="p-2" style="min-width:70px">Cant.</th>
           <th class="p-2" style="min-width:70px">Precio</th>
@@ -123,7 +123,7 @@
           <th class="p-2" style="min-width:80px">Vida útil</th>
           <th class="p-2" style="min-width:110px">Ubicación</th>
           <th class="p-2" style="min-width:80px">Estado</th>
-          <th class="p-2" style="min-width:90px">Familia</th>
+          <th class="p-2" style="min-width:70px">Familia</th>
           <th class="p-2" style="min-width:90px">Código</th>
           <th class="p-2" style="min-width:70px">Stock mín.</th>
           <th class="p-2" style="min-width:50px">✏️</th>
@@ -198,7 +198,7 @@
           <td>${item.vidautil}</td>
           <td>${item.ubicacion}</td>
           <td>${item.estado}</td>
-          <td>${item.familia || ""}</td>
+          <td title="${item.familia || ""}">${(item.familia || "").substring(0, 12)}${(item.familia||"").length > 12 ? "…" : ""}</td>
           <td>${item.codigobarras || ""}</td>
           <td class="text-center">${item.stock_minimo || 0}</td>
           <td class="text-center">${roleUsuario==='admin'?`<button onclick="abrirModalEdicion(${item.id},this)">✏️</button>`:''}</td>
