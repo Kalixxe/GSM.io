@@ -248,8 +248,18 @@ const API_BASE = "https://gsmio-production-3b4c.up.railway.app";
 document.getElementById("nombreRol").innerText = rolUsuario;
 
 if (rolUsuario !== "admin") {
-  document.getElementById("btnGuardar").style.display = "none";
-  document.getElementById("btnNuevo").style.display = "none";
+  const btnG = document.getElementById("btnGuardar");
+  const btnN = document.getElementById("btnNuevo");
+  if (btnG) btnG.style.display = "none";
+  if (btnN) btnN.style.display = "none";
+  setTimeout(() => {
+    document.querySelectorAll("#hojaMantenimiento input, #hojaMantenimiento textarea, #hojaMantenimiento select").forEach(el => {
+      el.setAttribute("disabled", true);
+    });if (rolUsuario !== "admin") {
+  const btnG = document.getElementById("btnGuardar");
+  const btnN = document.getElementById("btnNuevo");
+  if (btnG) btnG.style.display = "none";
+  if (btnN) btnN.style.display = "none";
   setTimeout(() => {
     document.querySelectorAll("#hojaMantenimiento input, #hojaMantenimiento textarea, #hojaMantenimiento select").forEach(el => {
       el.setAttribute("disabled", true);
