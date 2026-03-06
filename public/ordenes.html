@@ -12,6 +12,18 @@
       window.location.href = "index.html";
     }
   </script>
+  <style>
+    @media print {
+      @page { size: A4 landscape; margin: 10mm; }
+      .no-print { display: none !important; }
+      body { background: white !important; font-size: 11px; }
+      header, footer { display: none !important; }
+      #tablaOrdenes table { width: 100%; border-collapse: collapse; }
+      #tablaOrdenes th { background-color: #dc2626 !important; color: white !important; padding: 6px 8px; -webkit-print-color-adjust: exact; }
+      #tablaOrdenes td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; }
+      #tablaOrdenes tr:nth-child(even) td { background-color: #f9fafb !important; -webkit-print-color-adjust: exact; }
+    }
+  </style>
 </head>
 <body class="bg-gray-100 text-gray-900">
 
@@ -51,18 +63,23 @@
   </header>
 
   <main class="max-w-6xl mx-auto mt-8 p-4">
+  <div id="printHeader" style="display:none" class="mb-4 text-center border-b pb-3">
+    <h1 class="text-2xl font-bold">Órdenes de Compra — SIMio</h1>
+    <p id="printFecha" class="text-sm text-gray-500"></p>
+  </div>
 
     <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
       <h1 class="text-2xl font-bold text-gray-800">📦 Órdenes de Compra</h1>
       <div class="flex gap-3 flex-wrap items-center">
-        <select id="filtroEstado" class="p-2 border rounded text-sm" onchange="filtrarOrdenes()">
+        <select id="filtroEstado" class="no-print" class="p-2 border rounded text-sm" onchange="filtrarOrdenes()">
           <option value="">Todos los estados</option>
           <option value="pendiente">🔴 Pendiente</option>
           <option value="en_proceso">🟡 En proceso</option>
           <option value="completada">🟢 Completada</option>
         </select>
-        <input id="filtroBusqueda" placeholder="🔍 Buscar..." class="p-2 border rounded text-sm w-48" oninput="filtrarOrdenes()" />
-        <button id="btnNuevaOrden" onclick="abrirModalNuevaOrden()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold text-sm">+ Nueva Orden</button>
+        <input id="filtroBusqueda" class="no-print" placeholder="🔍 Buscar..." class="p-2 border rounded text-sm w-48" oninput="filtrarOrdenes()" />
+        <button onclick="window.print()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold text-sm no-print">🖨️ Imprimir</button>
+        <button id="btnNuevaOrden" onclick="abrirModalNuevaOrden()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold text-sm no-print">+ Nueva Orden</button>
       </div>
     </div>
 
@@ -406,6 +423,9 @@ async function eliminarOrden(id) {
 }
 
 window.onload = () => {
+  document.getElementById("printFecha").textContent = "Impreso el: " + new Date().toLocaleDateString("es-ES");
+  window.addEventListener("beforeprint", () => { document.getElementById("printHeader").style.display = "block"; });
+  window.addEventListener("afterprint",  () => { document.getElementById("printHeader").style.display = "none"; });
   cargarOrdenes();
   cargarInventario();
 };
