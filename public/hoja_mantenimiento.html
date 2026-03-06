@@ -678,8 +678,28 @@ async function cargarHoja(id) {
     const resOrdenes = await fetch(`${API_BASE}/api/ordenes_compra?hoja_id=${id}`);
     const ordenes = await resOrdenes.json();
     const divOrdenes = document.getElementById("seccionOrdenes");
-    // Rellenar campos amarillos con piezas guardadas
+    
+    // Rellenar campos amarillos con piezas guardadas (esperar a que el DOM esté listo)
     if (ordenes && ordenes.length > 0) {
+      setTimeout(() => {
+        const m = MAQUINAS[h.maquina];
+        if (m) {
+          m.secciones.forEach((sec, si) => {
+            sec.items.forEach((item, ii) => {
+              const orden = ordenes.find(o => o.item_origen === item);
+              if (orden) {
+                const piezaDiv = document.getElementById(`pieza_${si}_${ii}`);
+                const piezaNombre = document.getElementById(`piezaNombre_${si}_${ii}`);
+                const piezaCant = document.getElementById(`piezaCant_${si}_${ii}`);
+                if (piezaDiv) piezaDiv.classList.remove("hidden");
+                if (piezaNombre) piezaNombre.value = orden.pieza || "";
+                if (piezaCant) piezaCant.value = orden.cantidad || 1;
+              }
+            });
+          });
+        }
+      }, 300);
+    }
       const m = MAQUINAS[h.maquina];
       if (m) {
         m.secciones.forEach((sec, si) => {
