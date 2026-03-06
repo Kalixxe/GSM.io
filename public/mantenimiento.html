@@ -268,7 +268,7 @@
       data.forEach(row => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td class="p-2">${row.fecha || ""}</td>
+          <td class="p-2">${row.fecha ? row.fecha.split('T')[0] : ""}</td>
           <td class="p-2">${row.maquina || ""}</td>
           <td class="p-2">${row.linea || ""}</td>
           <td class="p-2">${row.tecnico || ""}</td>
