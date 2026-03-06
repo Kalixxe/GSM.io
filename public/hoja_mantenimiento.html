@@ -686,7 +686,8 @@ async function cargarHoja(id) {
         if (m) {
           m.secciones.forEach((sec, si) => {
             sec.items.forEach((item, ii) => {
-              const orden = ordenes.find(o => o.item_origen === item);
+              const orden = ordenes.find(o => o.item_origen?.trim() === item?.trim());
+              console.log("Buscando:", item, "→ encontrado:", orden?.pieza || "NO");
               if (orden) {
                 const piezaDiv = document.getElementById(`pieza_${si}_${ii}`);
                 const piezaNombre = document.getElementById(`piezaNombre_${si}_${ii}`);
